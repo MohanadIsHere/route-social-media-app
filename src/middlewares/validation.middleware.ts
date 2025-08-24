@@ -5,7 +5,13 @@ type KeyReqType = keyof Request;
 type SchemaType = Partial<Record<KeyReqType, ZodType>>;
 export const validation = (schema: SchemaType) => {
   return (req: Request, res: Response, next: NextFunction): NextFunction => {
-    const validationErrors: any = [];
+    const validationErrors: Array<{
+      key: KeyReqType;
+      issues: Array<{
+        message: string;
+        path: string | number | symbol | undefined;
+      }>;
+    }> = [];
 
     for (const key of Object.keys(schema) as KeyReqType[]) {
       if (!schema[key]) continue;
