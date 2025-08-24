@@ -3,5 +3,7 @@ import {config} from "dotenv";
 config({path: "./.env"});
 
 export const {
-  PORT
+  PORT,
+  NODE_ENV,
+  APP_NAME
 } = process.env
