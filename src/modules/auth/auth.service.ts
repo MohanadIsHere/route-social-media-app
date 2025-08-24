@@ -1,13 +1,20 @@
 import type { Request, Response } from "express";
 import { BadRequestException } from "../../utils";
+import { RegisterBodyDto } from "./dto";
 
 class AuthService {
   constructor() {}
 
-  register = (req: Request, res: Response) => {
+  register = (req: Request, res: Response): Response => {
+    const { username, email, password }: RegisterBodyDto = req.body;
+
     return res.status(201).json({
       message: "User registered successfully",
-      user: { ...req.body },
+      user: {
+        username,
+        email,
+        password
+      },
     });
   };
   login = (req: Request, res: Response) => {};
