@@ -12,3 +12,30 @@ export class AppException extends Error {
     this.name = this.constructor.name;
   }
 }
+export class BadRequestException extends AppException {
+  constructor(
+    message: string,
+    options?: ErrorOptions
+  ) {
+    super(message, 400, options);
+    this.name = this.constructor.name;
+  }
+}
+export class NotFoundException extends AppException {
+  constructor(
+    message: string,
+    options?: ErrorOptions
+  ) {
+    super(message, 404, options);
+    this.name = this.constructor.name;
+  }
+}
+export class UnauthorizedException extends AppException {
+  constructor(
+    message: string,
+    options?: ErrorOptions
+  ) {
+    super(message, 401, options);
+    this.name = this.constructor.name;
+  }
+}

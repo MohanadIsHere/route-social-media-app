@@ -12,6 +12,7 @@ const errorMiddleware = (
     message: error.message || "Internal Server Error",
     success: false,
     error: Object.keys(error).length > 0 ? error : undefined,
+    cause: error.cause ? error.cause : undefined,
     stack: NODE_ENV === "development" ? error.stack : undefined,
   });
 };

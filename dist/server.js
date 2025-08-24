@@ -11,8 +11,8 @@ const express_rate_limit_1 = require("express-rate-limit");
 const morgan_1 = __importDefault(require("morgan"));
 const chalk_1 = __importDefault(require("chalk"));
 const auth_controller_1 = __importDefault(require("./modules/auth/auth.controller"));
-const error_response_1 = require("./utils/response/error.response");
 const error_middleware_1 = __importDefault(require("./middlewares/error.middleware"));
+const utils_1 = require("./utils");
 const app = (0, express_1.default)();
 const port = env_1.PORT || 8303;
 const bootstrap = () => {
@@ -35,7 +35,7 @@ const bootstrap = () => {
             .json({ message: `Welcome To ${env_1.APP_NAME} Landing Page 👋 !` });
     });
     app.use(/(.*)/, (req, res) => {
-        throw new error_response_1.AppException(`Url ${req.originalUrl} not found, check your endpoint and the method used`, 404);
+        throw new utils_1.NotFoundException(`Url ${req.originalUrl} not found, check your endpoint and the method used`);
     });
     app.use(error_middleware_1.default);
     app.listen(port, () => {

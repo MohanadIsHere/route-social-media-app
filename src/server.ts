@@ -7,8 +7,8 @@ import { rateLimit } from "express-rate-limit";
 import morgan from "morgan";
 import chalk from "chalk";
 import authRouter from "./modules/auth/auth.controller";
-import { AppException } from "./utils/response/error.response";
 import errorMiddleware from "./middlewares/error.middleware";
+import { NotFoundException } from "./utils";
 
 const app = express();
 const port = PORT || 8303;
@@ -38,9 +38,8 @@ const bootstrap = (): void => {
   });
 
   app.use(/(.*)/, (req: Request, res: Response) => {
-    throw new AppException(
+    throw new NotFoundException(
       `Url ${req.originalUrl} not found, check your endpoint and the method used`,
-      404
     );
   });
   // error middleware
