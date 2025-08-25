@@ -9,11 +9,15 @@ import chalk from "chalk";
 import authRouter from "./modules/auth/auth.controller";
 import errorMiddleware from "./middlewares/error.middleware";
 import { NotFoundException } from "./utils";
+import connectToDatabase from "./database/connection.db";
 
 const app = express();
 const port = PORT || 8303;
 
-const bootstrap = (): void => {
+const bootstrap = async (): Promise<void> => {
+
+  // Database Connection
+  await connectToDatabase();
   const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     limit: 50,

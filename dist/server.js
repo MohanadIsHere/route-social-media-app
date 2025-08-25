@@ -13,9 +13,11 @@ const chalk_1 = __importDefault(require("chalk"));
 const auth_controller_1 = __importDefault(require("./modules/auth/auth.controller"));
 const error_middleware_1 = __importDefault(require("./middlewares/error.middleware"));
 const utils_1 = require("./utils");
+const connection_db_1 = __importDefault(require("./database/connection.db"));
 const app = (0, express_1.default)();
 const port = env_1.PORT || 8303;
-const bootstrap = () => {
+const bootstrap = async () => {
+    await (0, connection_db_1.default)();
     const limiter = (0, express_rate_limit_1.rateLimit)({
         windowMs: 15 * 60 * 1000,
         limit: 50,

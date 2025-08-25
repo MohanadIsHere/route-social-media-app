@@ -1,5 +1,4 @@
 import type { Request, Response } from "express";
-import { BadRequestException } from "../../utils";
 import { RegisterBodyDto } from "./dto";
 
 class AuthService {
