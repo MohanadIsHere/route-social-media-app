@@ -13,29 +13,26 @@ export class AppException extends Error {
   }
 }
 export class BadRequestException extends AppException {
-  constructor(
-    message: string,
-    options?: ErrorOptions
-  ) {
+  constructor(message: string, options?: ErrorOptions) {
     super(message, 400, options);
     this.name = this.constructor.name;
   }
 }
 export class NotFoundException extends AppException {
-  constructor(
-    message: string,
-    options?: ErrorOptions
-  ) {
+  constructor(message: string, options?: ErrorOptions) {
     super(message, 404, options);
     this.name = this.constructor.name;
   }
 }
 export class UnauthorizedException extends AppException {
-  constructor(
-    message: string,
-    options?: ErrorOptions
-  ) {
+  constructor(message: string, options?: ErrorOptions) {
     super(message, 401, options);
+    this.name = this.constructor.name;
+  }
+}
+export class ConflictException extends AppException {
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, 409, options);
     this.name = this.constructor.name;
   }
 }

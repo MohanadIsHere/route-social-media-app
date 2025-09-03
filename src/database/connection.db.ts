@@ -5,7 +5,7 @@ import { User } from "./models/user.model";
 
 const connectToDatabase = async (): Promise<void> => {
   try {
-    await connect(DB_URI as string);
+    await connect(DB_URI as unknown as string);
     await User.syncIndexes();
     console.log(
       chalk.green.bold("Connected to MongoDB Server Successfully ✅")

@@ -22,6 +22,8 @@ const userSchema = new mongoose_1.Schema({
     address: { type: String },
     gender: { type: String, enum: UserGenders, default: UserGenders.male },
     role: { type: String, enum: UserRoles, default: UserRoles.user },
+    confirmed: { type: Boolean },
+    otp: { type: String },
     confirmEmailOtp: { type: String },
     resetPasswordOtp: { type: String },
     confirmedAt: { type: Date },
@@ -35,10 +37,15 @@ const userSchema = new mongoose_1.Schema({
 userSchema
     .virtual("username")
     .set(function (val) {
-    const [firstName, lastName] = val.split(" ");
-    this.set({ firstName, lastName });
+    const [firstName, middleName, lastName] = val.split(" ");
+    if (middleName)
+        this.set({ firstName, middleName, lastName });
+    else
+        this.set({ firstName, lastName });
 })
     .get(function () {
-    return `${this.firstName} ${this.lastName}`;
+    return this.middleName
+        ? `${this.firstName} ${this.middleName} ${this.lastName}`
+        : `${this.firstName} ${this.lastName}`;
 });
 exports.User = mongoose_1.models.User || (0, mongoose_1.model)("User", userSchema);

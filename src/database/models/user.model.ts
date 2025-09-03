@@ -1,4 +1,4 @@
-import  { Types, Schema, models, model } from "mongoose";
+import { Schema, models, model } from "mongoose";
 
 export enum UserGenders {
   male = "male",
@@ -9,7 +9,6 @@ export enum UserRoles {
   admin = "admin",
 }
 export interface IUser {
-  _id: Types.ObjectId;
   firstName: string;
   middleName?: string;
   lastName: string;
@@ -18,6 +17,8 @@ export interface IUser {
   password: string;
   phone?: string;
   address?: string;
+  confirmed?: boolean;
+  otp?: string;
   gender: UserGenders;
   role: UserRoles;
 
@@ -25,6 +26,7 @@ export interface IUser {
   resetPasswordOtp?: string;
   confirmedAt?: Date;
   changeCredentialsAt?: Date;
+  createdAt?: Date;
   updatedAt?: Date;
 }
 const userSchema = new Schema<IUser>(
@@ -38,6 +40,8 @@ const userSchema = new Schema<IUser>(
     address: { type: String },
     gender: { type: String, enum: UserGenders, default: UserGenders.male },
     role: { type: String, enum: UserRoles, default: UserRoles.user },
+    confirmed: { type: Boolean },
+    otp: { type: String },
 
     confirmEmailOtp: { type: String },
     resetPasswordOtp: { type: String },
@@ -54,11 +58,14 @@ const userSchema = new Schema<IUser>(
 userSchema
   .virtual("username")
   .set(function (val: string) {
-    const [firstName, lastName] = val.split(" ");
-    this.set({ firstName, lastName });
+    const [firstName, middleName, lastName] = val.split(" ");
+    if (middleName) this.set({ firstName, middleName, lastName });
+    else this.set({ firstName, lastName });
   })
   .get(function () {
-    return `${this.firstName} ${this.lastName}`;
+    return this.middleName
+      ? `${this.firstName} ${this.middleName} ${this.lastName}`
+      : `${this.firstName} ${this.lastName}`;
   });
 
 export const User = models.User || model<IUser>("User", userSchema);

@@ -15,7 +15,6 @@ const app = express();
 const port = PORT || 8303;
 
 const bootstrap = async (): Promise<void> => {
-
   // Database Connection
   await connectToDatabase();
   const limiter = rateLimit({
@@ -36,6 +35,7 @@ const bootstrap = async (): Promise<void> => {
   app.use("/api/auth", authRouter);
 
   app.get("/", (req: Request, res: Response) => {
+    
     return res
       .status(200)
       .json({ message: `Welcome To ${APP_NAME} Landing Page 👋 !` });
@@ -43,7 +43,7 @@ const bootstrap = async (): Promise<void> => {
 
   app.use(/(.*)/, (req: Request, res: Response) => {
     throw new NotFoundException(
-      `Url ${req.originalUrl} not found, check your endpoint and the method used`,
+      `Url ${req.originalUrl} not found, check your endpoint and the method used`
     );
   });
   // error middleware
