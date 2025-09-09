@@ -1,4 +1,5 @@
-import { CreateOptions, HydratedDocument, Model, UpdateQuery, UpdateResult } from "mongoose";
+import type{  CreateOptions, HydratedDocument, UpdateQuery, UpdateResult } from "mongoose";
+import {Model} from "mongoose";
 import { NotFoundException } from "../../utils";
 export abstract class DatabaseRepository<TDocument> {
   constructor(protected readonly model: Model<TDocument>) {}
@@ -12,19 +13,7 @@ export abstract class DatabaseRepository<TDocument> {
   }): Promise<HydratedDocument<TDocument> | HydratedDocument<TDocument>[]> {
     return await this.model.create(data as any, options);
   }
-  async findFilter({
-    filter,
-  }: {
-    filter: Partial<TDocument>;
-  }): Promise<HydratedDocument<TDocument>[]> {
-    const filterResult: HydratedDocument<TDocument>[] | null =
-      await this.model.find({ ...filter } as any);
-    if (!filterResult || !filterResult.length) {
-      throw new NotFoundException("No documents found");
-    }
 
-    return filterResult;
-  }
   async update({
     filter,
     update,
@@ -37,5 +26,17 @@ export abstract class DatabaseRepository<TDocument> {
       throw new NotFoundException("Document not found");
     }
     return result;
+  }
+  async findOne(
+    filter: Partial<TDocument>
+  ): Promise<HydratedDocument<TDocument> | null> {
+    return this.model.findOne(filter as any).exec();
+  }
+  async findFilter({
+    filter,
+  }: {
+    filter: Partial<TDocument>;
+  }): Promise<HydratedDocument<TDocument>[]> {
+    return this.model.find(filter as any).exec();
   }
 }

@@ -3,21 +3,46 @@ import { IUser, User } from "../../database/models/user.model";
 import { UserRepository } from "../../database/repository/user.repository";
 import {
   BadRequestException,
+  compareHash,
+  createLoginCredentials,
   emailTemplates,
+  encryptText,
   eventEmitter,
+  generateToken,
+  hashText,
   NotFoundException,
   otpGen,
 } from "../../utils";
-import { APP_EMAIL, APP_NAME } from "../../config/env";
+import {
+  APP_EMAIL,
+  APP_NAME,
+  REFRESH_TOKEN_EXPIRES_IN,
+  REFRESH_TOKEN_USER_SECRET,
+} from "../../config/env";
+import { LoginBodyDto, RegisterBodyDto } from "./dto";
 
 class AuthService {
   private userModel = new UserRepository(User);
   constructor() {}
 
   register = async (req: Request, res: Response): Promise<Response> => {
-    const otp = otpGen;
+    const { password, phone }: RegisterBodyDto = req.body || {};
+    const otp = otpGen();
+    const hashed = await hashText({
+      plainText: password as string,
+    });
+    let encryptedPhone: string | undefined = undefined;
+    if (phone) {
+      encryptedPhone = encryptText({ cipherText: phone as string });
+    }
+
     const user = await this.userModel.createUser({
-      data: { ...req.body, otp } as Partial<IUser>,
+      data: {
+        ...req.body,
+        otp,
+        phone: encryptedPhone,
+        password: hashed,
+      } as Partial<IUser>,
     });
 
     eventEmitter.emit("sendEmail", {
@@ -25,10 +50,9 @@ class AuthService {
       to: user.email,
       subject: "Email Verification",
       text: "Please verify your email address.",
-      html: emailTemplates.confirmEmail({
+      html: emailTemplates.verifyEmail({
         otp,
         firstName: user.firstName,
-        link: `${req.protocol}://${req.get("host")}/api/auth/verify-email`,
       }),
     });
 
@@ -55,8 +79,7 @@ class AuthService {
     const [user] = await this.userModel.findFilter({
       filter: { email },
     });
-    console.log({user});
-    
+
     if (user) {
       if (user.confirmed)
         throw new BadRequestException("User already confirmed");
@@ -84,7 +107,29 @@ class AuthService {
     throw new NotFoundException("User not found");
   };
 
-  login = (req: Request, res: Response) => {};
+  login = async (req: Request, res: Response) => {
+    const { email, password }: LoginBodyDto = req.body || {};
+    const user = await this.userModel.findOne({ email });
+    if (!user) throw new NotFoundException("Invalid credentials");
+    if (!user.confirmed)
+      throw new BadRequestException(
+        "Please verify your email before logging in"
+      );
+    const isPasswordValid = await compareHash({
+      plainText: password as string,
+      cipherText: user.password as string,
+    });
+    if (!isPasswordValid) throw new BadRequestException("Invalid credentials");
+
+    // generate tokens
+    const credentials = createLoginCredentials(user)
+    return res.status(200).json({
+      message: "Login successful",
+      data: {
+        credentials,
+      },
+    });
+  };
 }
 
 export default new AuthService();

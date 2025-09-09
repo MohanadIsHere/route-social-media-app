@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { UserRoles } from "../../database/models/user.model";
 export const generalFields = {
   firstName: z
     .string({ error: "Invalid first name" })
@@ -14,6 +15,14 @@ export const generalFields = {
     .string({ error: "Invalid last name" })
     .min(2, { message: "Last name must be at least 2 characters long" })
     .max(100, { message: "Last name must be at most 100 characters long" })
+    .transform((val) => val.trim()),
+    role: z
+    .nativeEnum(UserRoles, { error: () => ({ message: "Invalid role" }) })
+    .transform((val) => (typeof val === "string" ? val.trim().toLowerCase() : val)),
+    address: z
+    .string({ error: "Invalid address" })
+    .min(5, { message: "Address must be at least 5 characters long" })
+    .max(200, { message: "Address must be at most 200 characters long" })
     .transform((val) => val.trim()),
   username: z
     .string({ error: "Invalid username" })

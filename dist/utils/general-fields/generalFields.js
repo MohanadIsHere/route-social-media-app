@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.generalFields = void 0;
 const zod_1 = require("zod");
+const user_model_1 = require("../../database/models/user.model");
 exports.generalFields = {
     firstName: zod_1.z
         .string({ error: "Invalid first name" })
@@ -17,6 +18,14 @@ exports.generalFields = {
         .string({ error: "Invalid last name" })
         .min(2, { message: "Last name must be at least 2 characters long" })
         .max(100, { message: "Last name must be at most 100 characters long" })
+        .transform((val) => val.trim()),
+    role: zod_1.z
+        .nativeEnum(user_model_1.UserRoles, { error: () => ({ message: "Invalid role" }) })
+        .transform((val) => (typeof val === "string" ? val.trim().toLowerCase() : val)),
+    address: zod_1.z
+        .string({ error: "Invalid address" })
+        .min(5, { message: "Address must be at least 5 characters long" })
+        .max(200, { message: "Address must be at most 200 characters long" })
         .transform((val) => val.trim()),
     username: zod_1.z
         .string({ error: "Invalid username" })

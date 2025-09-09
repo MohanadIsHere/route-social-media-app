@@ -16,6 +16,8 @@ exports.RegisterSchema = {
         middleName: utils_1.generalFields.middleName.optional(),
         phone: utils_1.generalFields.phone.optional(),
         lastName: utils_1.generalFields.lastName,
+        address: utils_1.generalFields.address.optional(),
+        role: utils_1.generalFields.role.optional(),
         confirmPassword: utils_1.generalFields.confirmPassword,
     })
         .refine((data) => data.password === data.confirmPassword, {

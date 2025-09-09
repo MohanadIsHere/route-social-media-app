@@ -27,4 +27,7 @@ exports.eventEmitter.on("sendEmail", (data) => {
         console.log("Message sent:", info.messageId);
     })();
 });
-exports.otpGen = Math.floor(100000 + Math.random() * 900000).toString();
+const otpGen = () => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+};
+exports.otpGen = otpGen;

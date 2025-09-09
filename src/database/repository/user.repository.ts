@@ -21,20 +21,16 @@ export class UserRepository extends DatabaseRepository<IUser> {
       throw new ConflictException("User already exists");
     }
 
-    // hash password
-    const hashed = await hashText({
-      plainText: data.password as string,
-    });
-    data.password = hashed;
-    // encrypt phone
-    const encryptedPhone = encryptText({ cipherText: data.phone as string });
-    const oldPhone = data.phone;
-    data.phone = encryptedPhone;
+    
+    // data.password = hashed;
+    // // encrypt phone
+    // const oldPhone = data.phone;
+    // data.phone = encryptedPhone;
     const user = (await this.create({
       data,
       options,
     })) as HydratedDocument<IUser>;
-    user.phone = oldPhone as string;
+    // user.phone = oldPhone as string;
 
     return user;
   }

@@ -35,10 +35,9 @@ const bootstrap = async (): Promise<void> => {
   app.use("/api/auth", authRouter);
 
   app.get("/", (req: Request, res: Response) => {
-    
     return res
       .status(200)
-      .json({ message: `Welcome To ${APP_NAME} Landing Page 👋 !` });
+      .json({ message: `Welcome To ${APP_NAME} Landing Page 👋 ! ` });
   });
 
   app.use(/(.*)/, (req: Request, res: Response) => {

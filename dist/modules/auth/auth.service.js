@@ -8,19 +8,31 @@ class AuthService {
     userModel = new user_repository_1.UserRepository(user_model_1.User);
     constructor() { }
     register = async (req, res) => {
-        const otp = utils_1.otpGen;
+        const { password, phone } = req.body || {};
+        const otp = (0, utils_1.otpGen)();
+        const hashed = await (0, utils_1.hashText)({
+            plainText: password,
+        });
+        let encryptedPhone = undefined;
+        if (phone) {
+            encryptedPhone = (0, utils_1.encryptText)({ cipherText: phone });
+        }
         const user = await this.userModel.createUser({
-            data: { ...req.body, otp },
+            data: {
+                ...req.body,
+                otp,
+                phone: encryptedPhone,
+                password: hashed,
+            },
         });
         utils_1.eventEmitter.emit("sendEmail", {
             from: `"${env_1.APP_NAME}" <${env_1.APP_EMAIL}>`,
             to: user.email,
             subject: "Email Verification",
             text: "Please verify your email address.",
-            html: utils_1.emailTemplates.confirmEmail({
+            html: utils_1.emailTemplates.verifyEmail({
                 otp,
                 firstName: user.firstName,
-                link: `${req.protocol}://${req.get("host")}/api/auth/verify-email`,
             }),
         });
         return res.status(201).json({
@@ -44,7 +56,6 @@ class AuthService {
         const [user] = await this.userModel.findFilter({
             filter: { email },
         });
-        console.log({ user });
         if (user) {
             if (user.confirmed)
                 throw new utils_1.BadRequestException("User already confirmed");
@@ -72,6 +83,26 @@ class AuthService {
         }
         throw new utils_1.NotFoundException("User not found");
     };
-    login = (req, res) => { };
+    login = async (req, res) => {
+        const { email, password } = req.body || {};
+        const user = await this.userModel.findOne({ email });
+        if (!user)
+            throw new utils_1.NotFoundException("Invalid credentials");
+        if (!user.confirmed)
+            throw new utils_1.BadRequestException("Please verify your email before logging in");
+        const isPasswordValid = await (0, utils_1.compareHash)({
+            plainText: password,
+            cipherText: user.password,
+        });
+        if (!isPasswordValid)
+            throw new utils_1.BadRequestException("Invalid credentials");
+        const credentials = (0, utils_1.createLoginCredentials)(user);
+        return res.status(200).json({
+            message: "Login successful",
+            data: {
+                credentials,
+            },
+        });
+    };
 }
 exports.default = new AuthService();

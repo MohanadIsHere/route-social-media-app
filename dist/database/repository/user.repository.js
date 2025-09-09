@@ -13,18 +13,10 @@ class UserRepository extends database_repository_1.DatabaseRepository {
         if (await this.model.findOne({ email: data.email })) {
             throw new utils_1.ConflictException("User already exists");
         }
-        const hashed = await (0, utils_1.hashText)({
-            plainText: data.password,
-        });
-        data.password = hashed;
-        const encryptedPhone = (0, utils_1.encryptText)({ cipherText: data.phone });
-        const oldPhone = data.phone;
-        data.phone = encryptedPhone;
         const user = (await this.create({
             data,
             options,
         }));
-        user.phone = oldPhone;
         return user;
     }
 }

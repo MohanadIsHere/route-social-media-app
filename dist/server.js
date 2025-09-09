@@ -34,7 +34,7 @@ const bootstrap = async () => {
     app.get("/", (req, res) => {
         return res
             .status(200)
-            .json({ message: `Welcome To ${env_1.APP_NAME} Landing Page 👋 !` });
+            .json({ message: `Welcome To ${env_1.APP_NAME} Landing Page 👋 ! ` });
     });
     app.use(/(.*)/, (req, res) => {
         throw new utils_1.NotFoundException(`Url ${req.originalUrl} not found, check your endpoint and the method used`);

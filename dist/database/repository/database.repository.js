@@ -10,19 +10,18 @@ class DatabaseRepository {
     async create({ data, options, }) {
         return await this.model.create(data, options);
     }
-    async findFilter({ filter, }) {
-        const filterResult = await this.model.find({ ...filter });
-        if (!filterResult || !filterResult.length) {
-            throw new utils_1.NotFoundException("No documents found");
-        }
-        return filterResult;
-    }
     async update({ filter, update, }) {
         const result = await this.model.updateMany(filter, update);
         if (!result.matchedCount) {
             throw new utils_1.NotFoundException("Document not found");
         }
         return result;
+    }
+    async findOne(filter) {
+        return this.model.findOne(filter).exec();
+    }
+    async findFilter({ filter, }) {
+        return this.model.find(filter).exec();
     }
 }
 exports.DatabaseRepository = DatabaseRepository;
