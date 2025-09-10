@@ -1,28 +1,27 @@
 import type { Request, Response } from "express";
-import { IUser, User } from "../../database/models/user.model";
+import { type IUser, User } from "../../database/models/user.model";
 import { UserRepository } from "../../database/repository/user.repository";
-import {
-  BadRequestException,
-  compareHash,
-  createLoginCredentials,
-  emailTemplates,
-  encryptText,
-  eventEmitter,
-  generateToken,
-  hashText,
-  NotFoundException,
-  otpGen,
-} from "../../utils";
+
 import {
   APP_EMAIL,
   APP_NAME,
   REFRESH_TOKEN_EXPIRES_IN,
-  REFRESH_TOKEN_USER_SECRET,
 } from "../../config/env";
-import { LoginBodyDto, RegisterBodyDto } from "./dto";
+import type { LoginBodyDto, LogoutBodyDto, RegisterBodyDto } from "./dto";
+import { eventEmitter, otpGen } from "../../utils/events";
+import { compareHash, hashText } from "../../utils/security/hash";
+import { encryptText } from "../../utils/security/encryption";
+import { emailTemplates } from "../../utils/templates";
+import { BadRequestException, NotFoundException } from "../../utils/response";
+import { createLoginCredentials, LogoutEnum } from "../../utils/tokens";
+import type { UpdateQuery } from "mongoose";
+import { TokenRepository } from "../../database/repository/token.repository";
+import { Token } from "../../database/models/token.model";
 
 class AuthService {
   private userModel = new UserRepository(User);
+  private tokenModel = new TokenRepository(Token);
+
   constructor() {}
 
   register = async (req: Request, res: Response): Promise<Response> => {
@@ -84,7 +83,7 @@ class AuthService {
       if (user.confirmed)
         throw new BadRequestException("User already confirmed");
       if (user.otp !== otp) throw new BadRequestException("Invalid OTP");
-      await this.userModel.update({
+      await this.userModel.updateOne({
         filter: { email },
         update: {
           $set: { confirmed: true },
@@ -107,7 +106,7 @@ class AuthService {
     throw new NotFoundException("User not found");
   };
 
-  login = async (req: Request, res: Response) => {
+  login = async (req: Request, res: Response): Promise<Response> => {
     const { email, password }: LoginBodyDto = req.body || {};
     const user = await this.userModel.findOne({ email });
     if (!user) throw new NotFoundException("Invalid credentials");
@@ -121,13 +120,46 @@ class AuthService {
     });
     if (!isPasswordValid) throw new BadRequestException("Invalid credentials");
 
-    // generate tokens
-    const credentials = createLoginCredentials(user)
+    // generate credentials
+    const credentials = createLoginCredentials(user);
     return res.status(200).json({
-      message: "Login successful",
+      message: "User logged in successfully",
       data: {
         credentials,
       },
+    });
+  };
+  logout = async (req: Request, res: Response): Promise<Response> => {
+    const { flag }: LogoutBodyDto = req.body || {};
+    let statusCode: number = 200;
+    const update: UpdateQuery<IUser> = {};
+    switch (flag) {
+      case LogoutEnum.all:
+        update.changeCredentialsAt = new Date();
+
+        break;
+
+      default:
+        await this.tokenModel.create({
+          data: {
+            jti: req?.decoded?.jti as string,
+            expiresIn: req?.decoded?.iat! + Number(REFRESH_TOKEN_EXPIRES_IN),
+            userId: req?.decoded?.id,
+          },
+        });
+        statusCode = 201;
+        break;
+    }
+    await this.userModel.updateOne({
+      filter: { _id: req?.decoded?.id },
+      update,
+    });
+
+    return res.status(statusCode).json({
+      message:
+        flag === LogoutEnum.only
+          ? "Logged out successfully from this device"
+          : "Logged out successfully from all devices",
     });
   };
 }

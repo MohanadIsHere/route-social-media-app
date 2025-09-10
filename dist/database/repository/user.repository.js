@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserRepository = void 0;
 const database_repository_1 = require("./database.repository");
-const utils_1 = require("../../utils");
+const response_1 = require("../../utils/response");
 class UserRepository extends database_repository_1.DatabaseRepository {
     model;
     constructor(model) {
@@ -11,7 +11,7 @@ class UserRepository extends database_repository_1.DatabaseRepository {
     }
     async createUser({ data, options, }) {
         if (await this.model.findOne({ email: data.email })) {
-            throw new utils_1.ConflictException("User already exists");
+            throw new response_1.ConflictException("User already exists");
         }
         const user = (await this.create({
             data,

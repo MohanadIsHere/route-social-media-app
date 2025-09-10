@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.validation = void 0;
-const utils_1 = require("../utils");
+const response_1 = require("../utils/response");
 const validation = (schema) => {
     return (req, res, next) => {
         const validationErrors = [];
@@ -21,7 +21,7 @@ const validation = (schema) => {
             }
         }
         if (validationErrors.length) {
-            throw new utils_1.BadRequestException("Validation Error", {
+            throw new response_1.BadRequestException("Validation Error", {
                 cause: validationErrors,
             });
         }

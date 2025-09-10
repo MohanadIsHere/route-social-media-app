@@ -1,24 +1,25 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.VerifyEmailSchema = exports.RegisterSchema = exports.LoginSchema = void 0;
+exports.LogoutSchema = exports.VerifyEmailSchema = exports.RegisterSchema = exports.LoginSchema = void 0;
 const zod_1 = require("zod");
-const utils_1 = require("../../utils");
+const general_fields_1 = require("../../utils/general-fields");
+const tokens_1 = require("../../utils/tokens");
 exports.LoginSchema = {
     body: zod_1.z.strictObject({
-        email: utils_1.generalFields.email,
-        password: utils_1.generalFields.password,
+        email: general_fields_1.generalFields.email,
+        password: general_fields_1.generalFields.password,
     }),
 };
 exports.RegisterSchema = {
     body: exports.LoginSchema.body
         .extend({
-        firstName: utils_1.generalFields.firstName,
-        middleName: utils_1.generalFields.middleName.optional(),
-        phone: utils_1.generalFields.phone.optional(),
-        lastName: utils_1.generalFields.lastName,
-        address: utils_1.generalFields.address.optional(),
-        role: utils_1.generalFields.role.optional(),
-        confirmPassword: utils_1.generalFields.confirmPassword,
+        firstName: general_fields_1.generalFields.firstName,
+        middleName: general_fields_1.generalFields.middleName.optional(),
+        phone: general_fields_1.generalFields.phone.optional(),
+        lastName: general_fields_1.generalFields.lastName,
+        address: general_fields_1.generalFields.address.optional(),
+        role: general_fields_1.generalFields.role.optional(),
+        confirmPassword: general_fields_1.generalFields.confirmPassword,
     })
         .refine((data) => data.password === data.confirmPassword, {
         message: "Password do not match the confirm password",
@@ -27,7 +28,12 @@ exports.RegisterSchema = {
 };
 exports.VerifyEmailSchema = {
     body: zod_1.z.strictObject({
-        email: utils_1.generalFields.email,
+        email: general_fields_1.generalFields.email,
         otp: zod_1.z.string({ error: "Invalid OTP" }).length(6, "OTP must be 6 characters long"),
+    }),
+};
+exports.LogoutSchema = {
+    body: zod_1.z.strictObject({
+        flag: zod_1.z.enum(tokens_1.LogoutEnum).default(tokens_1.LogoutEnum.only).optional(),
     }),
 };

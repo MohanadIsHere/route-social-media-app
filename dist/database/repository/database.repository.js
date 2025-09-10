@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DatabaseRepository = void 0;
-const utils_1 = require("../../utils");
+const response_1 = require("../../utils/response");
 class DatabaseRepository {
     model;
     constructor(model) {
@@ -10,12 +10,15 @@ class DatabaseRepository {
     async create({ data, options, }) {
         return await this.model.create(data, options);
     }
-    async update({ filter, update, }) {
+    async updateMany({ filter, update, }) {
         const result = await this.model.updateMany(filter, update);
         if (!result.matchedCount) {
-            throw new utils_1.NotFoundException("Document not found");
+            throw new response_1.NotFoundException("Document not found");
         }
         return result;
+    }
+    async updateOne({ filter, update, }) {
+        return await this.model.updateOne(filter, update);
     }
     async findOne(filter) {
         return this.model.findOne(filter).exec();

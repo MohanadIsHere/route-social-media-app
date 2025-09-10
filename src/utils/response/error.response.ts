@@ -30,6 +30,12 @@ export class UnauthorizedException extends AppException {
     this.name = this.constructor.name;
   }
 }
+export class ForbiddenException extends AppException {
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, 403, options);
+    this.name = this.constructor.name;
+  }
+}
 export class ConflictException extends AppException {
   constructor(message: string, options?: ErrorOptions) {
     super(message, 409, options);

@@ -1,4 +1,12 @@
-import { type Secret, sign, type SignOptions } from "jsonwebtoken";
+import {
+  type JwtPayload,
+  type Secret,
+  sign,
+  type SignOptions,
+  verify,
+} from "jsonwebtoken";
+import { v4 as uuid } from "uuid";
+
 import {
   ACCESS_TOKEN_ADMIN_SECRET,
   ACCESS_TOKEN_EXPIRES_IN,
@@ -9,11 +17,32 @@ import {
 } from "../../config/env";
 import {
   type HydratedUserDoc,
+  User,
   UserRoles,
 } from "../../database/models/user.model";
+import {
+  BadRequestException,
+  NotFoundException,
+  UnauthorizedException,
+} from "../response";
+import { UserRepository } from "../../database/repository/user.repository";
+import { TokenRepository } from "../../database/repository/token.repository";
+import { Token } from "../../database/models/token.model";
+
+const userModel: UserRepository = new UserRepository(User);
+const tokenModel: TokenRepository = new TokenRepository(Token);
+
 export enum SignatureLevelsEnum {
   Bearer = "Bearer",
   System = "System",
+}
+export enum TokenEnum {
+  access = "access",
+  refresh = "refresh",
+}
+export enum LogoutEnum {
+  only = "only",
+  all = "all",
 }
 export const generateToken = ({
   payload,
@@ -26,9 +55,15 @@ export const generateToken = ({
 }): string => {
   return sign({ ...payload }, secret, options);
 };
-// export const verifyToken = ({ token, secret } = {}) => {
-//   return jwt.verify(token, secret);
-// };
+export const verifyToken = ({
+  token,
+  secret = ACCESS_TOKEN_USER_SECRET as string,
+}: {
+  token: string;
+  secret: Secret;
+}): JwtPayload => {
+  return verify(token, secret) as JwtPayload;
+};
 
 export const detectSignatureLevel = (
   role: UserRoles = UserRoles.user
@@ -44,7 +79,7 @@ export const detectSignatureLevel = (
       signatureLevel = SignatureLevelsEnum.Bearer; // user
       break;
   }
-  
+
   return signatureLevel; // return signature level either admin(System) or user(Bearer)
 };
 export const getSignatures = (
@@ -74,16 +109,49 @@ export const createLoginCredentials = (
   const signatureLevel = detectSignatureLevel(user.role);
   // get the signatures based on the signature level
   const signatures = getSignatures(signatureLevel);
+  const jwtid = uuid();
 
   const accessToken = generateToken({
     payload: { id: user._id, email: user.email, role: user.role },
     secret: signatures.access_signature as string, // assign the access signature
-    options: { expiresIn: Number(ACCESS_TOKEN_EXPIRES_IN) },
+    options: { expiresIn: Number(ACCESS_TOKEN_EXPIRES_IN), jwtid },
   });
   const refreshToken = generateToken({
     payload: { id: user._id, email: user.email, role: user.role },
     secret: signatures.refresh_signature as string, // assign the refresh signature
-    options: { expiresIn: Number(REFRESH_TOKEN_EXPIRES_IN) },
+    options: { expiresIn: Number(REFRESH_TOKEN_EXPIRES_IN), jwtid },
   });
   return { accessToken, refreshToken };
+};
+export const decodeToken = async ({
+  authorization,
+  tokenType = TokenEnum.access,
+}: {
+  authorization: string;
+  tokenType?: TokenEnum;
+}) => {
+  const [key, token] = authorization.split(" ");
+  if (!token || !key) throw new UnauthorizedException("Missing token parts");
+  const signatures = getSignatures(key as SignatureLevelsEnum);
+  const decoded: JwtPayload = verifyToken({
+    token,
+    secret:
+      tokenType === TokenEnum.access
+        ? (signatures.access_signature as string)
+        : (signatures.refresh_signature as string),
+  });
+
+  if (!decoded?.id || !decoded?.iat)
+    throw new BadRequestException("Invalid token");
+
+  if (await tokenModel.findOne({ jti: decoded.jti! }))
+    throw new UnauthorizedException("Token revoked");
+
+  const user = await userModel.findOne({ email: decoded?.email });
+  if (!user) throw new NotFoundException("User not found");
+
+  if (user.changeCredentialsAt?.getTime() || 0 > decoded.iat * 1000)
+    throw new UnauthorizedException("Token revoked");
+  
+  return { user, decoded };
 };

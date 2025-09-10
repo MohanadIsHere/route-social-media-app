@@ -12,8 +12,9 @@ const morgan_1 = __importDefault(require("morgan"));
 const chalk_1 = __importDefault(require("chalk"));
 const auth_controller_1 = __importDefault(require("./modules/auth/auth.controller"));
 const error_middleware_1 = __importDefault(require("./middlewares/error.middleware"));
-const utils_1 = require("./utils");
+const response_1 = require("./utils/response");
 const connection_db_1 = __importDefault(require("./database/connection.db"));
+const user_controller_1 = __importDefault(require("./modules/user/user.controller"));
 const app = (0, express_1.default)();
 const port = env_1.PORT || 8303;
 const bootstrap = async () => {
@@ -31,13 +32,14 @@ const bootstrap = async () => {
     });
     app.use(express_1.default.json(), (0, helmet_1.default)(), (0, cors_1.default)(), limiter, (0, morgan_1.default)("common"));
     app.use("/api/auth", auth_controller_1.default);
+    app.use("/api/users", user_controller_1.default);
     app.get("/", (req, res) => {
         return res
             .status(200)
             .json({ message: `Welcome To ${env_1.APP_NAME} Landing Page 👋 ! ` });
     });
     app.use(/(.*)/, (req, res) => {
-        throw new utils_1.NotFoundException(`Url ${req.originalUrl} not found, check your endpoint and the method used`);
+        throw new response_1.NotFoundException(`Url ${req.originalUrl} not found, check your endpoint and the method used`);
     });
     app.use(error_middleware_1.default);
     app.listen(port, () => {

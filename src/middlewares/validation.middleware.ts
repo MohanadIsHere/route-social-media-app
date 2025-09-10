@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import type { ZodError, ZodType } from "zod";
-import { BadRequestException } from "../utils";
+import { BadRequestException } from "../utils/response";
 type KeyReqType = keyof Request;
 type SchemaType = Partial<Record<KeyReqType, ZodType>>;
 export const validation = (schema: SchemaType) => {

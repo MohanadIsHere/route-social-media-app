@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { generalFields } from "../../utils";
+import { generalFields } from "../../utils/general-fields";
+import { LogoutEnum } from "../../utils/tokens";
 
 export const LoginSchema = {
   body: z.strictObject({
@@ -27,5 +28,10 @@ export const VerifyEmailSchema = {
   body: z.strictObject({
     email: generalFields.email,
     otp: z.string({ error: "Invalid OTP" }).length(6, "OTP must be 6 characters long"),
+  }),
+};
+export const LogoutSchema = {
+  body: z.strictObject({
+    flag: z.enum(LogoutEnum).default(LogoutEnum.only).optional(),
   }),
 };

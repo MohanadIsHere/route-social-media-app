@@ -1,20 +1,31 @@
 import { Router } from "express";
 import authService from "./auth.service";
 import { validation } from "../../middlewares/validation.middleware";
-import {
-  LoginSchema,
-  RegisterSchema,
-  VerifyEmailSchema,
-} from "./auth.validation";
+import * as validators from "./auth.validation";
+import { authentication } from "../../middlewares/authentication.middleware";
 
 const authRouter = Router();
 
-authRouter.post("/register", validation(RegisterSchema), authService.register);
+authRouter.post(
+  "/register",
+  validation(validators.RegisterSchema),
+  authService.register
+);
 authRouter.patch(
   "/verify-email",
-  validation(VerifyEmailSchema),
+  validation(validators.VerifyEmailSchema),
   authService.verifyEmail
 );
-authRouter.post("/login", validation(LoginSchema), authService.login);
+authRouter.post(
+  "/login",
+  validation(validators.LoginSchema),
+  authService.login
+);
+authRouter.post(
+  "/logout",
+  validation(validators.LogoutSchema),
+  authentication(),
+  authService.logout
+);
 
 export default authRouter;

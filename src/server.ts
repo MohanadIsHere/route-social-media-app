@@ -8,8 +8,9 @@ import morgan from "morgan";
 import chalk from "chalk";
 import authRouter from "./modules/auth/auth.controller";
 import errorMiddleware from "./middlewares/error.middleware";
-import { NotFoundException } from "./utils";
+import { NotFoundException } from "./utils/response";
 import connectToDatabase from "./database/connection.db";
+import userRouter from "./modules/user/user.controller";
 
 const app = express();
 const port = PORT || 8303;
@@ -33,6 +34,7 @@ const bootstrap = async (): Promise<void> => {
 
   // End Points
   app.use("/api/auth", authRouter);
+  app.use("/api/users", userRouter);
 
   app.get("/", (req: Request, res: Response) => {
     return res

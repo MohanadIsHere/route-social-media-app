@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { IError } from "../utils/response/error.response";
+import { IError } from "../utils/response";
 import { NODE_ENV } from "../config/env";
 
 const errorMiddleware = (
