@@ -16,7 +16,6 @@ export const RegisterSchema = {
       phone: generalFields.phone.optional(),
       lastName: generalFields.lastName,
       address: generalFields.address.optional(),
-      role: generalFields.role.optional(),
       confirmPassword: generalFields.confirmPassword,
     })
     .refine((data) => data.password === data.confirmPassword, {
@@ -27,11 +26,29 @@ export const RegisterSchema = {
 export const VerifyEmailSchema = {
   body: z.strictObject({
     email: generalFields.email,
-    otp: z.string({ error: "Invalid OTP" }).length(6, "OTP must be 6 characters long"),
+    otp: generalFields.otp,
   }),
 };
 export const LogoutSchema = {
   body: z.strictObject({
     flag: z.enum(LogoutEnum).default(LogoutEnum.only).optional(),
+  }),
+};
+export const RegisterWithGmailSchema = {
+  body: z.strictObject({
+    idToken: z.string({ error: "Invalid Token" }),
+  }),
+};
+export const SendForgetPasswordCodeSchema = {
+  body: z.strictObject({
+    email: generalFields.email,
+  }),
+};
+export const ResetPasswordSchema = {
+  body: z.strictObject({
+    email: generalFields.email,
+    otp: generalFields.otp,
+    password: generalFields.password,
+    confirmPassword: generalFields.confirmPassword,
   }),
 };

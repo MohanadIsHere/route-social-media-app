@@ -21,7 +21,7 @@ exports.generalFields = {
         .transform((val) => val.trim()),
     role: zod_1.z
         .nativeEnum(user_model_1.UserRoles, { error: () => ({ message: "Invalid role" }) })
-        .transform((val) => (typeof val === "string" ? val.trim().toLowerCase() : val)),
+        .transform((val) => typeof val === "string" ? val.trim().toLowerCase() : val),
     address: zod_1.z
         .string({ error: "Invalid address" })
         .min(5, { message: "Address must be at least 5 characters long" })
@@ -53,4 +53,7 @@ exports.generalFields = {
     confirmPassword: zod_1.z
         .string({ error: "Invalid confirm password" })
         .transform((val) => val.trim()),
+    otp: zod_1.z
+        .string({ error: "Invalid OTP" })
+        .length(6, "OTP must be 6 characters long"),
 };

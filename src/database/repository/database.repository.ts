@@ -6,6 +6,7 @@ import type {
 } from "mongoose";
 import { Model } from "mongoose";
 import { NotFoundException } from "../../utils/response";
+import type { RootFilterQuery } from "mongoose";
 export abstract class DatabaseRepository<TDocument> {
   constructor(protected readonly model: Model<TDocument>) {}
 
@@ -23,10 +24,10 @@ export abstract class DatabaseRepository<TDocument> {
     filter,
     update,
   }: {
-    filter: Partial<TDocument>;
+    filter: Partial<RootFilterQuery<TDocument>>;
     update: UpdateQuery<TDocument>;
   }): Promise<UpdateResult> {
-    const result = await this.model.updateMany(filter as any, update as any);
+    const result = await this.model.updateMany(filter, update);
     if (!result.matchedCount) {
       throw new NotFoundException("Document not found");
     }
@@ -42,15 +43,15 @@ export abstract class DatabaseRepository<TDocument> {
     return await this.model.updateOne(filter as any, update);
   }
   async findOne(
-    filter: Partial<HydratedDocument<TDocument>>
+    filter: Partial<RootFilterQuery<TDocument>>
   ): Promise<HydratedDocument<TDocument> | null> {
-    return this.model.findOne(filter as any).exec();
+    return this.model.findOne(filter).exec();
   }
   async findFilter({
     filter,
   }: {
-    filter: Partial<HydratedDocument<TDocument>>;
+    filter: Partial<RootFilterQuery<TDocument>>;
   }): Promise<HydratedDocument<TDocument>[]> {
-    return this.model.find(filter as any).exec();
+    return this.model.find(filter).exec();
   }
 }

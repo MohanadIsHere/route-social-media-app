@@ -16,10 +16,12 @@ export const generalFields = {
     .min(2, { message: "Last name must be at least 2 characters long" })
     .max(100, { message: "Last name must be at most 100 characters long" })
     .transform((val) => val.trim()),
-    role: z
+  role: z
     .nativeEnum(UserRoles, { error: () => ({ message: "Invalid role" }) })
-    .transform((val) => (typeof val === "string" ? val.trim().toLowerCase() : val)),
-    address: z
+    .transform((val) =>
+      typeof val === "string" ? val.trim().toLowerCase() : val
+    ),
+  address: z
     .string({ error: "Invalid address" })
     .min(5, { message: "Address must be at least 5 characters long" })
     .max(200, { message: "Address must be at most 200 characters long" })
@@ -51,4 +53,7 @@ export const generalFields = {
   confirmPassword: z
     .string({ error: "Invalid confirm password" })
     .transform((val) => val.trim()),
+  otp: z
+    .string({ error: "Invalid OTP" })
+    .length(6, "OTP must be 6 characters long"),
 };

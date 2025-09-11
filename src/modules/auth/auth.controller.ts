@@ -11,6 +11,16 @@ authRouter.post(
   validation(validators.RegisterSchema),
   AuthService.register
 );
+authRouter.post(
+  "/register-gmail",
+  validation(validators.RegisterWithGmailSchema),
+  AuthService.registerWithGmail
+);
+authRouter.post(
+  "/login-gmail",
+  validation(validators.RegisterWithGmailSchema),
+  AuthService.loginWithGmail
+);
 authRouter.patch(
   "/verify-email",
   validation(validators.VerifyEmailSchema),
@@ -26,5 +36,15 @@ authRouter.post(
   validation(validators.LogoutSchema),
   authentication(),
   AuthService.logout
+);
+authRouter.patch(
+  "/send-reset-password",
+  validation(validators.SendForgetPasswordCodeSchema),
+  AuthService.sendForgetPasswordCode
+);
+authRouter.patch(
+  "/reset-password",
+  validation(validators.ResetPasswordSchema),
+  AuthService.resetPassword
 );
 export default authRouter;

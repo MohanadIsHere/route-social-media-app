@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.User = exports.UserRoles = exports.UserGenders = void 0;
+exports.User = exports.UserProviders = exports.UserRoles = exports.UserGenders = void 0;
 const mongoose_1 = require("mongoose");
 var UserGenders;
 (function (UserGenders) {
@@ -12,18 +12,35 @@ var UserRoles;
     UserRoles["user"] = "user";
     UserRoles["admin"] = "admin";
 })(UserRoles || (exports.UserRoles = UserRoles = {}));
+var UserProviders;
+(function (UserProviders) {
+    UserProviders["system"] = "system";
+    UserProviders["google"] = "google";
+})(UserProviders || (exports.UserProviders = UserProviders = {}));
 const userSchema = new mongoose_1.Schema({
     firstName: { type: String, required: true, minLength: 2, maxLength: 25 },
     middleName: { type: String, minLength: 2, maxLength: 25 },
     lastName: { type: String, required: true, minLength: 2, maxLength: 25 },
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    password: {
+        type: String,
+        required: function () {
+            return this.provider === UserProviders.google ? false : true;
+        },
+    },
     phone: { type: String },
     address: { type: String },
     gender: { type: String, enum: UserGenders, default: UserGenders.male },
     role: { type: String, enum: UserRoles, default: UserRoles.user },
     confirmed: { type: Boolean },
     otp: { type: String },
+    profilePicture: { type: String },
+    coverImages: [String],
+    provider: {
+        type: String,
+        enum: UserProviders,
+        default: UserProviders.system,
+    },
     confirmEmailOtp: { type: String },
     resetPasswordOtp: { type: String },
     confirmedAt: { type: Date },

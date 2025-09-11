@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const user_model_1 = require("../../database/models/user.model");
 const user_repository_1 = require("../../database/repository/user.repository");
+const google_auth_library_1 = require("google-auth-library");
 const env_1 = require("../../config/env");
 const events_1 = require("../../utils/events");
 const hash_1 = require("../../utils/security/hash");
@@ -12,6 +13,47 @@ const tokens_1 = require("../../utils/tokens");
 class AuthService {
     userModel = new user_repository_1.UserRepository(user_model_1.User);
     constructor() { }
+    async verifyGmailAccount({ idToken, }) {
+        const client = new google_auth_library_1.OAuth2Client();
+        const ticket = await client.verifyIdToken({
+            idToken,
+            audience: env_1.WEB_CLIENT_ID,
+        });
+        if (!ticket)
+            throw new response_1.BadRequestException("Invalid Token");
+        const payload = ticket.getPayload();
+        if (!payload?.email_verified)
+            throw new response_1.BadRequestException("Failed to verify this account");
+        return payload;
+    }
+    registerWithGmail = async (req, res) => {
+        const { idToken } = req.body || {};
+        const { email, given_name, family_name, picture } = await this.verifyGmailAccount({ idToken });
+        let user = await this.userModel.findOne({ email: email });
+        if (user) {
+            if (user.provider === user_model_1.UserProviders.google) {
+                return await this.loginWithGmail(req, res);
+            }
+            throw new response_1.ConflictException(`Email already exist with ${user.provider} provider`);
+        }
+        user = await this.userModel.createUser({
+            data: {
+                firstName: given_name,
+                lastName: family_name,
+                email: email,
+                profilePicture: picture,
+                confirmedAt: new Date(),
+                confirmed: true,
+                provider: user_model_1.UserProviders.google,
+            },
+        });
+        if (!user)
+            throw new response_1.BadRequestException("Failed to register with gmail, please try again later");
+        const credentials = (0, tokens_1.createLoginCredentials)(user);
+        return res
+            .status(201)
+            .json({ message: "User registered successfully", data: { credentials } });
+    };
     register = async (req, res) => {
         const { password, phone } = req.body || {};
         const otp = (0, events_1.otpGen)();
@@ -69,7 +111,7 @@ class AuthService {
             await this.userModel.updateOne({
                 filter: { email },
                 update: {
-                    $set: { confirmed: true },
+                    $set: { confirmed: true, confirmedAt: new Date() },
                     $unset: { otp: "" },
                 },
             });
@@ -87,6 +129,22 @@ class AuthService {
             });
         }
         throw new response_1.NotFoundException("User not found");
+    };
+    loginWithGmail = async (req, res) => {
+        const { idToken } = req.body || {};
+        const { email } = await this.verifyGmailAccount({
+            idToken,
+        });
+        const user = await this.userModel.findOne({
+            email: email,
+            provider: user_model_1.UserProviders.google,
+        });
+        if (!user)
+            throw new response_1.NotFoundException("Email does not exist with google provider");
+        const credentials = (0, tokens_1.createLoginCredentials)(user);
+        return res
+            .status(200)
+            .json({ message: "User logged in successfully", data: { credentials } });
     };
     login = async (req, res) => {
         const { email, password } = req.body || {};
@@ -108,6 +166,78 @@ class AuthService {
                 credentials,
             },
         });
+    };
+    sendForgetPasswordCode = async (req, res) => {
+        const { email } = req.body || {};
+        const user = await this.userModel.findOne({
+            email,
+            provider: user_model_1.UserProviders.system,
+            confirmed: { $exists: true },
+        });
+        if (!user)
+            throw new response_1.NotFoundException("User not found due to one of the following reasons: [not registered, Invalid provider, not confirmed]");
+        const otp = (0, events_1.otpGen)();
+        const result = await this.userModel.updateOne({
+            filter: { email },
+            update: {
+                $set: { resetPasswordOtp: await (0, hash_1.hashText)({ plainText: String(otp) }) },
+            },
+        });
+        if (!result?.matchedCount)
+            throw new response_1.BadRequestException("Failed to send reset password otp, please try again later");
+        events_1.eventEmitter.emit("sendEmail", {
+            from: `"${env_1.APP_NAME}" <${env_1.APP_EMAIL}>`,
+            to: user.email,
+            subject: "Reset Password",
+            text: "otp for reset password",
+            html: templates_1.emailTemplates.sendEmailForResetPasswordOtp({
+                otp,
+                firstName: user.firstName,
+            }),
+        });
+        return res.status(200).json({
+            message: "Otp Sent, please check your inbox for the otp, check your spams if you didn't get the email",
+        });
+    };
+    resetPassword = async (req, res) => {
+        const { email, otp, password, confirmPassword } = req.body || {};
+        if (password !== confirmPassword)
+            throw new response_1.BadRequestException("confirmPassword does not match password");
+        const user = await this.userModel.findOne({
+            email,
+            confirmed: { $exists: true },
+            resetPasswordOtp: { $exists: true },
+            provider: user_model_1.UserProviders.system,
+        });
+        if (!user)
+            throw new response_1.NotFoundException("User not found due to one of the following reasons: [not registered, Invalid provider, not confirmed,otp does not exist]");
+        if (!(await (0, hash_1.compareHash)({
+            plainText: String(otp),
+            cipherText: user.resetPasswordOtp,
+        })))
+            throw new response_1.BadRequestException("Invalid Otp");
+        const result = await this.userModel.updateOne({
+            filter: { email: user.email },
+            update: {
+                $unset: { otp: "", resetPasswordOtp: "" },
+                $set: {
+                    changeCredentialsAt: new Date(),
+                    password: await (0, hash_1.hashText)({ plainText: password }),
+                },
+            },
+        });
+        if (!result.matchedCount)
+            throw new response_1.BadRequestException("Failed to reset password, please try again later");
+        events_1.eventEmitter.emit("sendEmail", {
+            from: `"${env_1.APP_NAME}" <${env_1.APP_EMAIL}>`,
+            to: user.email,
+            subject: "Password Reset",
+            text: "Password Reset Successfully",
+            html: templates_1.emailTemplates.passwordResetSuccessfullyEmail({
+                firstName: user.firstName,
+            }),
+        });
+        return res.status(200).json({ message: "Password Reset Successfully" });
     };
     logout = async (req, res) => {
         const { flag } = req.body || {};
