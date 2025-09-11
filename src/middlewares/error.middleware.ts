@@ -8,6 +8,10 @@ const errorMiddleware = (
   res: Response,
   next: NextFunction
 ) => {
+  if (error.name === "TokenExpiredError") {
+    error.message = "Session expired, please login again";
+    error.statusCode = 401;
+  }
   return res.status(error.statusCode || 500).json({
     message: error.message || "Internal Server Error",
     success: false,

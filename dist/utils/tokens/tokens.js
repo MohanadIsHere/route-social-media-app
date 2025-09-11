@@ -100,7 +100,7 @@ const decodeToken = async ({ authorization, tokenType = TokenEnum.access, }) => 
     const user = await userModel.findOne({ email: decoded?.email });
     if (!user)
         throw new response_1.NotFoundException("User not found");
-    if (user.changeCredentialsAt?.getTime() || 0 > decoded.iat * 1000)
+    if ((user.changeCredentialsAt?.getTime() || 0) > decoded.iat * 1000)
         throw new response_1.UnauthorizedException("Token revoked");
     return { user, decoded };
 };

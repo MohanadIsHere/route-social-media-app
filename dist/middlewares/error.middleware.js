@@ -2,6 +2,10 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const env_1 = require("../config/env");
 const errorMiddleware = (error, req, res, next) => {
+    if (error.name === "TokenExpiredError") {
+        error.message = "Session expired, please login again";
+        error.statusCode = 401;
+    }
     return res.status(error.statusCode || 500).json({
         message: error.message || "Internal Server Error",
         success: false,

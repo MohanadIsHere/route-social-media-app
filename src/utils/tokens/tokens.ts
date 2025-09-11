@@ -150,8 +150,9 @@ export const decodeToken = async ({
   const user = await userModel.findOne({ email: decoded?.email });
   if (!user) throw new NotFoundException("User not found");
 
-  if (user.changeCredentialsAt?.getTime() || 0 > decoded.iat * 1000)
+  if ((user.changeCredentialsAt?.getTime() || 0) > decoded.iat * 1000)
     throw new UnauthorizedException("Token revoked");
+
   
   return { user, decoded };
 };
