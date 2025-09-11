@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.decodeToken = exports.createLoginCredentials = exports.getSignatures = exports.detectSignatureLevel = exports.verifyToken = exports.generateToken = exports.LogoutEnum = exports.TokenEnum = exports.SignatureLevelsEnum = void 0;
+exports.createRevokeToken = exports.decodeToken = exports.createLoginCredentials = exports.getSignatures = exports.detectSignatureLevel = exports.verifyToken = exports.generateToken = exports.LogoutEnum = exports.TokenEnum = exports.SignatureLevelsEnum = void 0;
 const jsonwebtoken_1 = require("jsonwebtoken");
 const uuid_1 = require("uuid");
 const env_1 = require("../../config/env");
@@ -105,3 +105,16 @@ const decodeToken = async ({ authorization, tokenType = TokenEnum.access, }) => 
     return { user, decoded };
 };
 exports.decodeToken = decodeToken;
+const createRevokeToken = async ({ decoded, }) => {
+    const result = await tokenModel.create({
+        data: {
+            jti: decoded.jti,
+            expiresIn: decoded.iat + Number(env_1.REFRESH_TOKEN_EXPIRES_IN),
+            userId: decoded.id,
+        },
+    });
+    if (!result)
+        throw new response_1.BadRequestException("Failed To Revoke This Token");
+    return result;
+};
+exports.createRevokeToken = createRevokeToken;

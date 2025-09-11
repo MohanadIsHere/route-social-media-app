@@ -27,7 +27,7 @@ import {
 } from "../response";
 import { UserRepository } from "../../database/repository/user.repository";
 import { TokenRepository } from "../../database/repository/token.repository";
-import { Token } from "../../database/models/token.model";
+import { HydratedTokenDoc, Token } from "../../database/models/token.model";
 
 const userModel: UserRepository = new UserRepository(User);
 const tokenModel: TokenRepository = new TokenRepository(Token);
@@ -153,6 +153,20 @@ export const decodeToken = async ({
   if ((user.changeCredentialsAt?.getTime() || 0) > decoded.iat * 1000)
     throw new UnauthorizedException("Token revoked");
 
-  
   return { user, decoded };
+};
+export const createRevokeToken = async ({
+  decoded,
+}: {
+  decoded: JwtPayload;
+}): Promise<HydratedTokenDoc> => {
+  const result = await tokenModel.create({
+    data: {
+      jti: decoded.jti as string,
+      expiresIn: decoded.iat! + Number(REFRESH_TOKEN_EXPIRES_IN),
+      userId: decoded.id,
+    },
+  });
+  if (!result) throw new BadRequestException("Failed To Revoke This Token");
+  return result as HydratedTokenDoc;
 };

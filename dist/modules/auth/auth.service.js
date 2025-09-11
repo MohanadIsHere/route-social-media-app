@@ -9,11 +9,8 @@ const encryption_1 = require("../../utils/security/encryption");
 const templates_1 = require("../../utils/templates");
 const response_1 = require("../../utils/response");
 const tokens_1 = require("../../utils/tokens");
-const token_repository_1 = require("../../database/repository/token.repository");
-const token_model_1 = require("../../database/models/token.model");
 class AuthService {
     userModel = new user_repository_1.UserRepository(user_model_1.User);
-    tokenModel = new token_repository_1.TokenRepository(token_model_1.Token);
     constructor() { }
     register = async (req, res) => {
         const { password, phone } = req.body || {};
@@ -121,13 +118,7 @@ class AuthService {
                 update.changeCredentialsAt = new Date();
                 break;
             default:
-                await this.tokenModel.create({
-                    data: {
-                        jti: req?.decoded?.jti,
-                        expiresIn: req?.decoded?.iat + Number(env_1.REFRESH_TOKEN_EXPIRES_IN),
-                        userId: req?.decoded?.id,
-                    },
-                });
+                await (0, tokens_1.createRevokeToken)({ decoded: req?.decoded });
                 statusCode = 201;
                 break;
         }

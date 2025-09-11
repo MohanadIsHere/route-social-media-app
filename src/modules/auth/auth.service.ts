@@ -1,11 +1,10 @@
 import type { Request, Response } from "express";
-import { type IUser, User } from "../../database/models/user.model";
+import {  type IUser, User } from "../../database/models/user.model";
 import { UserRepository } from "../../database/repository/user.repository";
 
 import {
   APP_EMAIL,
   APP_NAME,
-  REFRESH_TOKEN_EXPIRES_IN,
 } from "../../config/env";
 import type { LoginBodyDto, LogoutBodyDto, RegisterBodyDto } from "./dto";
 import { eventEmitter, otpGen } from "../../utils/events";
@@ -13,14 +12,14 @@ import { compareHash, hashText } from "../../utils/security/hash";
 import { encryptText } from "../../utils/security/encryption";
 import { emailTemplates } from "../../utils/templates";
 import { BadRequestException, NotFoundException } from "../../utils/response";
-import { createLoginCredentials, LogoutEnum } from "../../utils/tokens";
+import { createLoginCredentials, createRevokeToken, LogoutEnum } from "../../utils/tokens";
 import type { UpdateQuery } from "mongoose";
 import { TokenRepository } from "../../database/repository/token.repository";
 import { Token } from "../../database/models/token.model";
+import type{ JwtPayload } from "jsonwebtoken";
 
 class AuthService {
   private userModel = new UserRepository(User);
-  private tokenModel = new TokenRepository(Token);
 
   constructor() {}
 
@@ -140,13 +139,7 @@ class AuthService {
         break;
 
       default:
-        await this.tokenModel.create({
-          data: {
-            jti: req?.decoded?.jti as string,
-            expiresIn: req?.decoded?.iat! + Number(REFRESH_TOKEN_EXPIRES_IN),
-            userId: req?.decoded?.id,
-          },
-        });
+        await createRevokeToken({ decoded: req?.decoded as JwtPayload });
         statusCode = 201;
         break;
     }
@@ -162,6 +155,7 @@ class AuthService {
           : "Logged out successfully from all devices",
     });
   };
+  
 }
 
 export default new AuthService();
