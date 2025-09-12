@@ -19,5 +19,12 @@ class UserService {
             },
         });
     };
+    updateProfileImage = async (req, res) => {
+        return res.status(200).json({
+            data: {
+                file: req.file
+            }
+        });
+    };
 }
 exports.default = new UserService();
