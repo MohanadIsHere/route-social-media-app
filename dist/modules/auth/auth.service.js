@@ -6,7 +6,6 @@ const google_auth_library_1 = require("google-auth-library");
 const env_1 = require("../../config/env");
 const events_1 = require("../../utils/events");
 const hash_1 = require("../../utils/security/hash");
-const encryption_1 = require("../../utils/security/encryption");
 const templates_1 = require("../../utils/templates");
 const response_1 = require("../../utils/response");
 const tokens_1 = require("../../utils/tokens");
@@ -55,32 +54,11 @@ class AuthService {
             .json({ message: "User registered successfully", data: { credentials } });
     };
     register = async (req, res) => {
-        const { password, phone } = req.body || {};
-        const otp = (0, events_1.otpGen)();
-        const hashed = await (0, hash_1.hashText)({
-            plainText: password,
-        });
-        let encryptedPhone = undefined;
-        if (phone) {
-            encryptedPhone = (0, encryption_1.encryptText)({ cipherText: phone });
-        }
         const user = await this.userModel.createUser({
             data: {
                 ...req.body,
-                otp,
-                phone: encryptedPhone,
-                password: hashed,
+                otpExpiresIn: new Date(Date.now() + 10 * 60 * 1000),
             },
-        });
-        events_1.eventEmitter.emit("sendEmail", {
-            from: `"${env_1.APP_NAME}" <${env_1.APP_EMAIL}>`,
-            to: user.email,
-            subject: "Email Verification",
-            text: "Please verify your email address.",
-            html: templates_1.emailTemplates.verifyEmail({
-                otp,
-                firstName: user.firstName,
-            }),
         });
         return res.status(201).json({
             message: "User registered successfully, please check your email for verification.",
@@ -106,13 +84,19 @@ class AuthService {
         if (user) {
             if (user.confirmed)
                 throw new response_1.BadRequestException("User already confirmed");
-            if (user.otp !== otp)
+            if (user.confirmEmailOtp &&
+                !(await (0, hash_1.compareHash)({
+                    plainText: otp,
+                    cipherText: user.confirmEmailOtp,
+                })))
                 throw new response_1.BadRequestException("Invalid OTP");
+            if (user.otpExpiresIn && user.otpExpiresIn < new Date())
+                throw new response_1.BadRequestException("OTP expired");
             await this.userModel.updateOne({
                 filter: { email },
                 update: {
                     $set: { confirmed: true, confirmedAt: new Date() },
-                    $unset: { otp: "" },
+                    $unset: { confirmEmailOtp: "", otpExpiresIn: "" },
                 },
             });
             events_1.eventEmitter.emit("sendEmail", {

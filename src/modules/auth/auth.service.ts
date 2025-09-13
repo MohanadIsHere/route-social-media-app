@@ -11,14 +11,12 @@ import { APP_EMAIL, APP_NAME, WEB_CLIENT_ID } from "../../config/env";
 import type {
   LoginBodyDto,
   LogoutBodyDto,
-  RegisterBodyDto,
   RegisterWithGmailDto,
   ResetPasswordDto,
   SendForgetPasswordCodeDto,
 } from "./dto";
 import { eventEmitter, otpGen } from "../../utils/events";
 import { compareHash, hashText } from "../../utils/security/hash";
-import { encryptText } from "../../utils/security/encryption";
 import { emailTemplates } from "../../utils/templates";
 import {
   BadRequestException,
@@ -31,7 +29,7 @@ import {
   LogoutEnum,
 } from "../../utils/tokens";
 import type { UpdateQuery } from "mongoose";
-import type{ JwtPayload } from "jsonwebtoken";
+import type { JwtPayload } from "jsonwebtoken";
 
 class AuthService {
   private userModel = new UserRepository(User);
@@ -96,34 +94,11 @@ class AuthService {
   };
 
   register = async (req: Request, res: Response): Promise<Response> => {
-    const { password, phone }: RegisterBodyDto = req.body || {};
-    const otp = otpGen();
-    const hashed = await hashText({
-      plainText: password as string,
-    });
-    let encryptedPhone: string | undefined = undefined;
-    if (phone) {
-      encryptedPhone = encryptText({ cipherText: phone as string });
-    }
-
     const user = await this.userModel.createUser({
       data: {
         ...req.body,
-        otp,
-        phone: encryptedPhone,
-        password: hashed,
+        otpExpiresIn: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
       } as Partial<IUser>,
-    });
-
-    eventEmitter.emit("sendEmail", {
-      from: `"${APP_NAME}" <${APP_EMAIL}>`,
-      to: user.email,
-      subject: "Email Verification",
-      text: "Please verify your email address.",
-      html: emailTemplates.verifyEmail({
-        otp,
-        firstName: user.firstName,
-      }),
     });
 
     return res.status(201).json({
@@ -153,12 +128,22 @@ class AuthService {
     if (user) {
       if (user.confirmed)
         throw new BadRequestException("User already confirmed");
-      if (user.otp !== otp) throw new BadRequestException("Invalid OTP");
+      if (
+        user.confirmEmailOtp &&
+        !(await compareHash({
+          plainText: otp,
+          cipherText: user.confirmEmailOtp,
+        }))
+      )
+        throw new BadRequestException("Invalid OTP");
+        if (user.otpExpiresIn && user.otpExpiresIn < new Date())
+          throw new BadRequestException("OTP expired");
+
       await this.userModel.updateOne({
         filter: { email },
         update: {
           $set: { confirmed: true, confirmedAt: new Date() },
-          $unset: { otp: "" },
+          $unset: { confirmEmailOtp: "", otpExpiresIn: ""},
         },
       });
       eventEmitter.emit("sendEmail", {
@@ -234,7 +219,7 @@ class AuthService {
         "User not found due to one of the following reasons: [not registered, Invalid provider, not confirmed]"
       );
     const otp = otpGen();
-    
+
     const result = await this.userModel.updateOne({
       filter: { email },
       update: {
@@ -282,12 +267,11 @@ class AuthService {
       }))
     )
       throw new BadRequestException("Invalid Otp");
-    
 
     const result = await this.userModel.updateOne({
       filter: { email: user.email },
       update: {
-        $unset: { otp: "", resetPasswordOtp : ""},
+        $unset: { otp: "", resetPasswordOtp: "" },
         $set: {
           changeCredentialsAt: new Date(),
 
@@ -300,15 +284,15 @@ class AuthService {
         "Failed to reset password, please try again later"
       );
 
-      eventEmitter.emit("sendEmail", {
-        from: `"${APP_NAME}" <${APP_EMAIL}>`,
-        to: user.email,
-        subject: "Password Reset",
-        text: "Password Reset Successfully",
-        html: emailTemplates.passwordResetSuccessfullyEmail({
-          firstName: user.firstName,
-        }),
-      });
+    eventEmitter.emit("sendEmail", {
+      from: `"${APP_NAME}" <${APP_EMAIL}>`,
+      to: user.email,
+      subject: "Password Reset",
+      text: "Password Reset Successfully",
+      html: emailTemplates.passwordResetSuccessfullyEmail({
+        firstName: user.firstName,
+      }),
+    });
 
     return res.status(200).json({ message: "Password Reset Successfully" });
   };

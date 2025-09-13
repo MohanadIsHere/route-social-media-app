@@ -2,6 +2,11 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.User = exports.UserProviders = exports.UserRoles = exports.UserGenders = void 0;
 const mongoose_1 = require("mongoose");
+const hash_1 = require("../../utils/security/hash");
+const encryption_1 = require("../../utils/security/encryption");
+const events_1 = require("../../utils/events");
+const env_1 = require("../../config/env");
+const templates_1 = require("../../utils/templates");
 var UserGenders;
 (function (UserGenders) {
     UserGenders["male"] = "male";
@@ -33,8 +38,8 @@ const userSchema = new mongoose_1.Schema({
     gender: { type: String, enum: UserGenders, default: UserGenders.male },
     role: { type: String, enum: UserRoles, default: UserRoles.user },
     confirmed: { type: Boolean },
-    otp: { type: String },
     profilePicture: { type: String },
+    otpExpiresIn: { type: Date },
     coverImages: [String],
     provider: {
         type: String,
@@ -48,6 +53,7 @@ const userSchema = new mongoose_1.Schema({
 }, {
     timestamps: true,
     optimisticConcurrency: true,
+    strictQuery: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
 });
@@ -64,5 +70,41 @@ userSchema
     return this.middleName
         ? `${this.firstName} ${this.middleName} ${this.lastName}`
         : `${this.firstName} ${this.lastName}`;
+});
+userSchema.pre("save", async function (next) {
+    if (this.isModified("password") &&
+        this.password &&
+        this.provider !== UserProviders.google) {
+        this.password = await (0, hash_1.hashText)({
+            plainText: this.password,
+        });
+    }
+    if (this.isModified("phone") && this.phone) {
+        this.phone = (0, encryption_1.encryptText)({ cipherText: this.phone });
+    }
+    if (this.isNew && !this.confirmed && this.provider !== UserProviders.google) {
+        plainOtp = (0, events_1.otpGen)();
+        this.confirmEmailOtp = await (0, hash_1.hashText)({ plainText: plainOtp });
+    }
+    next();
+});
+let plainOtp = "";
+userSchema.post("save", function (doc) {
+    if (!doc.confirmed &&
+        doc.provider !== UserProviders.google &&
+        plainOtp) {
+        events_1.eventEmitter.emit("sendEmail", {
+            from: `"${env_1.APP_NAME}" <${env_1.APP_EMAIL}>`,
+            to: doc.email,
+            subject: "Email Verification",
+            text: "Please verify your email address.",
+            html: templates_1.emailTemplates.verifyEmail({
+                otp: plainOtp,
+                firstName: doc.firstName,
+            }),
+        });
+        console.log("Email sent with OTP:", plainOtp);
+        plainOtp = null;
+    }
 });
 exports.User = mongoose_1.models.User || (0, mongoose_1.model)("User", userSchema);

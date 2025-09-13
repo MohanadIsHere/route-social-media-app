@@ -1,4 +1,9 @@
-import { Schema, models, model, HydratedDocument } from "mongoose";
+import { Schema, models, model, type HydratedDocument } from "mongoose";
+import { hashText } from "../../utils/security/hash";
+import { encryptText } from "../../utils/security/encryption";
+import { eventEmitter, otpGen } from "../../utils/events";
+import { APP_EMAIL, APP_NAME } from "../../config/env";
+import { emailTemplates } from "../../utils/templates";
 
 export enum UserGenders {
   male = "male",
@@ -22,13 +27,13 @@ export interface IUser {
   phone?: string;
   address?: string;
   confirmed?: boolean;
-  otp?: string;
   gender: UserGenders;
   role: UserRoles;
   provider?: string;
-  profilePicture? : string;
+  profilePicture?: string;
   coverImages?: Array<string>;
   confirmEmailOtp?: string;
+  otpExpiresIn?: Date;
   resetPasswordOtp?: string;
   confirmedAt?: Date;
   changeCredentialsAt?: Date;
@@ -52,8 +57,8 @@ const userSchema = new Schema<IUser>(
     gender: { type: String, enum: UserGenders, default: UserGenders.male },
     role: { type: String, enum: UserRoles, default: UserRoles.user },
     confirmed: { type: Boolean },
-    otp: { type: String },
     profilePicture: { type: String },
+    otpExpiresIn: { type: Date },
     coverImages: [String],
 
     provider: {
@@ -70,6 +75,7 @@ const userSchema = new Schema<IUser>(
   {
     timestamps: true,
     optimisticConcurrency: true,
+    strictQuery: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
   }
@@ -86,6 +92,58 @@ userSchema
       ? `${this.firstName} ${this.middleName} ${this.lastName}`
       : `${this.firstName} ${this.lastName}`;
   });
+
+userSchema.pre("save", async function (next) {
+  if (
+    this.isModified("password") &&
+    this.password &&
+    this.provider !== UserProviders.google
+  ) {
+    this.password = await hashText({
+      plainText: this.password,
+    });
+  }
+
+  if (this.isModified("phone") && this.phone) {
+    this.phone = encryptText({ cipherText: this.phone });
+  }
+
+  if (this.isNew && !this.confirmed && this.provider !== UserProviders.google) {
+    plainOtp = otpGen();
+    this.confirmEmailOtp = await hashText({ plainText: plainOtp });
+  }
+
+  next();
+});
+let plainOtp: string | null = "";
+
+userSchema.post("save", function (doc) {
+  
+  if (
+    !doc.confirmed &&
+    doc.provider !== UserProviders.google &&
+    plainOtp
+  ) {
+    eventEmitter.emit("sendEmail", {
+      from: `"${APP_NAME}" <${APP_EMAIL}>`,
+      to: doc.email,
+      subject: "Email Verification",
+      text: "Please verify your email address.",
+      html: emailTemplates.verifyEmail({
+        otp: plainOtp, 
+        firstName: doc.firstName,
+      }),
+    });
+
+    console.log("Email sent with OTP:", plainOtp);
+
+    plainOtp = null; 
+  }
+});
+
+
+
+
 
 export const User = models.User || model<IUser>("User", userSchema);
 export type HydratedUserDoc = HydratedDocument<IUser>;
