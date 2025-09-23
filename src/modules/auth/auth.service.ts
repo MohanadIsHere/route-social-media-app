@@ -22,6 +22,7 @@ import {
   BadRequestException,
   ConflictException,
   NotFoundException,
+  SuccessResponse,
 } from "../../utils/response";
 import {
   createLoginCredentials,
@@ -30,6 +31,7 @@ import {
 } from "../../utils/tokens";
 import type { UpdateQuery } from "mongoose";
 import type { JwtPayload } from "jsonwebtoken";
+import { uploadFile } from "../../utils/aws/S3";
 
 class AuthService {
   private userModel = new UserRepository(User);
@@ -88,34 +90,25 @@ class AuthService {
       );
     const credentials = createLoginCredentials(user);
 
-    return res
-      .status(201)
-      .json({ message: "User registered successfully", data: { credentials } });
+    return SuccessResponse.created({
+      res,
+      message: "User registered successfully",
+      data: { credentials },
+    });
   };
 
   register = async (req: Request, res: Response): Promise<Response> => {
-    const user = await this.userModel.createUser({
+    await this.userModel.createUser({
       data: {
         ...req.body,
         otpExpiresIn: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
       } as Partial<IUser>,
     });
 
-    return res.status(201).json({
+    return SuccessResponse.created({
+      res,
       message:
         "User registered successfully, please check your email for verification.",
-      data: {
-        user: {
-          id: user._id,
-          username: user.username,
-          email: user.email,
-          address: user.address ? user.address : undefined,
-          gender: user.gender,
-          phone: user.phone ? user.phone : undefined,
-          createdAt: user.createdAt,
-          updatedAt: user.updatedAt,
-        },
-      },
     });
   };
 
@@ -136,14 +129,14 @@ class AuthService {
         }))
       )
         throw new BadRequestException("Invalid OTP");
-        if (user.otpExpiresIn && user.otpExpiresIn < new Date())
-          throw new BadRequestException("OTP expired");
+      if (user.otpExpiresIn && user.otpExpiresIn < new Date())
+        throw new BadRequestException("OTP expired");
 
       await this.userModel.updateOne({
         filter: { email },
         update: {
           $set: { confirmed: true, confirmedAt: new Date() },
-          $unset: { confirmEmailOtp: "", otpExpiresIn: ""},
+          $unset: { confirmEmailOtp: "", otpExpiresIn: "" },
         },
       });
       eventEmitter.emit("sendEmail", {
@@ -155,7 +148,9 @@ class AuthService {
           firstName: user.firstName,
         }),
       });
-      return res.status(200).json({
+
+      return SuccessResponse.ok({
+        res,
         message: "Email verified successfully.",
       });
     }
@@ -177,9 +172,11 @@ class AuthService {
 
     const credentials = createLoginCredentials(user);
 
-    return res
-      .status(200)
-      .json({ message: "User logged in successfully", data: { credentials } });
+    return SuccessResponse.ok({
+      res,
+      message: "User logged in successfully",
+      data: { credentials },
+    });
   };
   login = async (req: Request, res: Response): Promise<Response> => {
     const { email, password }: LoginBodyDto = req.body || {};
@@ -197,7 +194,8 @@ class AuthService {
 
     // generate credentials
     const credentials = createLoginCredentials(user);
-    return res.status(200).json({
+    return SuccessResponse.ok({
+      res,
       message: "User logged in successfully",
       data: {
         credentials,
@@ -240,7 +238,8 @@ class AuthService {
         firstName: user.firstName,
       }),
     });
-    return res.status(200).json({
+    return SuccessResponse.ok({
+      res,
       message:
         "Otp Sent, please check your inbox for the otp, check your spams if you didn't get the email",
     });
@@ -294,7 +293,7 @@ class AuthService {
       }),
     });
 
-    return res.status(200).json({ message: "Password Reset Successfully" });
+    return SuccessResponse.ok({ res, message: "Password Reset Successfully" });
   };
   logout = async (req: Request, res: Response): Promise<Response> => {
     const { flag }: LogoutBodyDto = req.body || {};
@@ -316,13 +315,21 @@ class AuthService {
       update,
     });
 
-    return res.status(statusCode).json({
-      message:
-        flag === LogoutEnum.only
-          ? "Logged out successfully from this device"
-          : "Logged out successfully from all devices",
-    });
+    return statusCode === 201
+      ? SuccessResponse.created({
+          res,
+          message:
+            flag === LogoutEnum.only
+              ? "Logged out successfully from this device"
+              : "Logged out successfully from all devices",
+        })
+      : SuccessResponse.ok({
+          res,
+          message:
+            flag === LogoutEnum.only
+              ? "Logged out successfully from this device"
+              : "Logged out successfully from all devices",
+        });
   };
 }
-
 export default new AuthService();

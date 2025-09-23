@@ -16,6 +16,7 @@ export const RegisterSchema = {
       phone: generalFields.phone.optional(),
       lastName: generalFields.lastName,
       address: generalFields.address.optional(),
+      // profilePicture: generalFields.profilePicture.optional(),
       confirmPassword: generalFields.confirmPassword,
     })
     .refine((data) => data.password === data.confirmPassword, {

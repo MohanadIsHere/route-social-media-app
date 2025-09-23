@@ -2,13 +2,16 @@ import type { NextFunction, Request, Response } from "express";
 import { createLoginCredentials, createRevokeToken } from "../../utils/tokens";
 import { HydratedUserDoc } from "../../database/models/user.model";
 import type { JwtPayload } from "jsonwebtoken";
+import { SuccessResponse } from "../../utils/response";
+import { uploadFile } from "../../utils/aws/S3";
 
 class UserService {
   constructor() {}
 
   // get me
   me = (req: Request, res: Response, next: NextFunction): Response => {
-    return res.status(200).json({
+    return SuccessResponse.ok({
+      res,
       message: "User Retrieved Successfully",
       data: { user: req.user, decoded: req.decoded },
     });
@@ -18,20 +21,29 @@ class UserService {
     const credentials = createLoginCredentials(req.user as HydratedUserDoc);
     await createRevokeToken({ decoded: req?.decoded as JwtPayload });
 
-    return res.status(201).json({
+    return SuccessResponse.created({
+      res,
       message: "Token refreshed successfully",
       data: {
         credentials,
       },
     });
   };
-  updateProfileImage = async (req: Request, res: Response): Promise<Response> => {
-    
-    return res.status(200).json({
-      data: {
-        file: req.file
-      }
-    })
+
+  updateProfileImage = async (
+    req: Request,
+    res: Response
+  ): Promise<Response> => {
+    const key = await uploadFile({
+      file: req.file as Express.Multer.File,
+      path: `users/${req.decoded?.id}`,
+    });
+
+    return SuccessResponse.ok({
+      res,
+      data: { key },
+      message: "Image uploaded successfully",
+    });
   };
 }
 export default new UserService();

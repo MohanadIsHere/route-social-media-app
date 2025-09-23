@@ -103,7 +103,6 @@ userSchema.post("save", function (doc) {
                 firstName: doc.firstName,
             }),
         });
-        console.log("Email sent with OTP:", plainOtp);
         plainOtp = null;
     }
 });

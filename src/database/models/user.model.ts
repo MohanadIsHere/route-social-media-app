@@ -135,7 +135,6 @@ userSchema.post("save", function (doc) {
       }),
     });
 
-    console.log("Email sent with OTP:", plainOtp);
 
     plainOtp = null; 
   }

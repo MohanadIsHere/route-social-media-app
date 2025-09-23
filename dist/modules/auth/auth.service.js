@@ -49,31 +49,22 @@ class AuthService {
         if (!user)
             throw new response_1.BadRequestException("Failed to register with gmail, please try again later");
         const credentials = (0, tokens_1.createLoginCredentials)(user);
-        return res
-            .status(201)
-            .json({ message: "User registered successfully", data: { credentials } });
+        return response_1.SuccessResponse.created({
+            res,
+            message: "User registered successfully",
+            data: { credentials },
+        });
     };
     register = async (req, res) => {
-        const user = await this.userModel.createUser({
+        await this.userModel.createUser({
             data: {
                 ...req.body,
                 otpExpiresIn: new Date(Date.now() + 10 * 60 * 1000),
             },
         });
-        return res.status(201).json({
+        return response_1.SuccessResponse.created({
+            res,
             message: "User registered successfully, please check your email for verification.",
-            data: {
-                user: {
-                    id: user._id,
-                    username: user.username,
-                    email: user.email,
-                    address: user.address ? user.address : undefined,
-                    gender: user.gender,
-                    phone: user.phone ? user.phone : undefined,
-                    createdAt: user.createdAt,
-                    updatedAt: user.updatedAt,
-                },
-            },
         });
     };
     verifyEmail = async (req, res) => {
@@ -108,7 +99,8 @@ class AuthService {
                     firstName: user.firstName,
                 }),
             });
-            return res.status(200).json({
+            return response_1.SuccessResponse.ok({
+                res,
                 message: "Email verified successfully.",
             });
         }
@@ -126,9 +118,11 @@ class AuthService {
         if (!user)
             throw new response_1.NotFoundException("Email does not exist with google provider");
         const credentials = (0, tokens_1.createLoginCredentials)(user);
-        return res
-            .status(200)
-            .json({ message: "User logged in successfully", data: { credentials } });
+        return response_1.SuccessResponse.ok({
+            res,
+            message: "User logged in successfully",
+            data: { credentials },
+        });
     };
     login = async (req, res) => {
         const { email, password } = req.body || {};
@@ -144,7 +138,8 @@ class AuthService {
         if (!isPasswordValid)
             throw new response_1.BadRequestException("Invalid credentials");
         const credentials = (0, tokens_1.createLoginCredentials)(user);
-        return res.status(200).json({
+        return response_1.SuccessResponse.ok({
+            res,
             message: "User logged in successfully",
             data: {
                 credentials,
@@ -179,7 +174,8 @@ class AuthService {
                 firstName: user.firstName,
             }),
         });
-        return res.status(200).json({
+        return response_1.SuccessResponse.ok({
+            res,
             message: "Otp Sent, please check your inbox for the otp, check your spams if you didn't get the email",
         });
     };
@@ -221,7 +217,7 @@ class AuthService {
                 firstName: user.firstName,
             }),
         });
-        return res.status(200).json({ message: "Password Reset Successfully" });
+        return response_1.SuccessResponse.ok({ res, message: "Password Reset Successfully" });
     };
     logout = async (req, res) => {
         const { flag } = req.body || {};
@@ -240,11 +236,19 @@ class AuthService {
             filter: { _id: req?.decoded?.id },
             update,
         });
-        return res.status(statusCode).json({
-            message: flag === tokens_1.LogoutEnum.only
-                ? "Logged out successfully from this device"
-                : "Logged out successfully from all devices",
-        });
+        return statusCode === 201
+            ? response_1.SuccessResponse.created({
+                res,
+                message: flag === tokens_1.LogoutEnum.only
+                    ? "Logged out successfully from this device"
+                    : "Logged out successfully from all devices",
+            })
+            : response_1.SuccessResponse.ok({
+                res,
+                message: flag === tokens_1.LogoutEnum.only
+                    ? "Logged out successfully from this device"
+                    : "Logged out successfully from all devices",
+            });
     };
 }
 exports.default = new AuthService();

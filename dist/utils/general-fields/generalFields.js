@@ -56,4 +56,5 @@ exports.generalFields = {
     otp: zod_1.z
         .string({ error: "Invalid OTP" })
         .length(6, "OTP must be 6 characters long"),
+    profilePicture: zod_1.z.url({ error: "Invalid profile picture URL" }),
 };

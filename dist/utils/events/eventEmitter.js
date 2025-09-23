@@ -24,7 +24,6 @@ exports.eventEmitter.on("sendEmail", (data) => {
             text: data?.text,
             html: data?.html,
         });
-        console.log("Message sent:", info.messageId);
     })();
 });
 const otpGen = () => {

@@ -53,7 +53,9 @@ export const generalFields = {
   confirmPassword: z
     .string({ error: "Invalid confirm password" })
     .transform((val) => val.trim()),
+
   otp: z
     .string({ error: "Invalid OTP" })
     .length(6, "OTP must be 6 characters long"),
+  profilePicture: z.url({ error: "Invalid profile picture URL" }),
 };
