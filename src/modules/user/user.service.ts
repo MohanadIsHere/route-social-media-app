@@ -3,7 +3,7 @@ import { createLoginCredentials, createRevokeToken } from "../../utils/tokens";
 import { HydratedUserDoc } from "../../database/models/user.model";
 import type { JwtPayload } from "jsonwebtoken";
 import { SuccessResponse } from "../../utils/response";
-import { uploadFile } from "../../utils/aws/S3";
+import { createPreSignedUrl, uploadFile } from "../../utils/aws/S3";
 
 class UserService {
   constructor() {}
@@ -34,14 +34,24 @@ class UserService {
     req: Request,
     res: Response
   ): Promise<Response> => {
-    const key = await uploadFile({
-      file: req.file as Express.Multer.File,
+    // const key = await uploadFile({
+    //   file: req.file as Express.Multer.File,
+    //   path: `users/${req.decoded?.id}`,
+    // });
+    const {
+      ContentType,
+      originalname,
+    }: { ContentType: string; originalname: string } = req.body;
+
+    const { url, key } = await createPreSignedUrl({
+      ContentType,
+      originalname,
       path: `users/${req.decoded?.id}`,
     });
 
     return SuccessResponse.ok({
       res,
-      data: { key },
+      data: { key, url },
       message: "Image uploaded successfully",
     });
   };

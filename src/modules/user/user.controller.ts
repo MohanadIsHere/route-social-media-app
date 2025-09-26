@@ -10,10 +10,10 @@ userRouter.get("/me", authentication(), UserService.me);
 userRouter.patch(
   "/profile-image",
   authentication(),
-  cloudFileUpload({
-    validation: fileValidation.image,
-    storageApproach: StorageApproachEnum.memory
-  }).single("image"),
+  // cloudFileUpload({
+  //   validation: fileValidation.image,
+  //   storageApproach: StorageApproachEnum.memory
+  // }).single("image"),
   UserService.updateProfileImage
 );
 

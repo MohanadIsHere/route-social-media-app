@@ -31,7 +31,6 @@ import {
 } from "../../utils/tokens";
 import type { UpdateQuery } from "mongoose";
 import type { JwtPayload } from "jsonwebtoken";
-import { uploadFile } from "../../utils/aws/S3";
 
 class AuthService {
   private userModel = new UserRepository(User);

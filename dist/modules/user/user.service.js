@@ -24,13 +24,15 @@ class UserService {
         });
     };
     updateProfileImage = async (req, res) => {
-        const key = await (0, S3_1.uploadFile)({
-            file: req.file,
+        const { ContentType, originalname, } = req.body;
+        const { url, key } = await (0, S3_1.createPreSignedUrl)({
+            ContentType,
+            originalname,
             path: `users/${req.decoded?.id}`,
         });
         return response_1.SuccessResponse.ok({
             res,
-            data: { key },
+            data: { key, url },
             message: "Image uploaded successfully",
         });
     };

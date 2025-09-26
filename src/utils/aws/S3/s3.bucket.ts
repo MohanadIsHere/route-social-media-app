@@ -6,6 +6,7 @@ import { s3Client } from "../../../config/s3";
 import { Upload } from "@aws-sdk/lib-storage";
 import { BadRequestException } from "../../response";
 import { generateNumInMbs } from "../../multer";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 export const uploadFile = async ({
   Bucket = AWS_BUCKET_NAME as string,
@@ -110,4 +111,27 @@ export const uploadLargeFile = async ({
   const { Key } = await upload.done();
   if (!Key) throw new BadRequestException("File upload failed");
   return Key;
+};
+export const createPreSignedUrl = async ({
+  Bucket = AWS_BUCKET_NAME as string,
+  path,
+  ContentType,
+  originalname,
+  expiresIn = 3600,
+}: {
+  Bucket?: string;
+  path?: string;
+  originalname: string;
+  ContentType: string;
+  expiresIn?: number;
+}): Promise<{ url: string; key: string }> => {
+  const command = new PutObjectCommand({
+    Bucket,
+    Key: `${APP_NAME}/${path}/${uuid()}_${originalname}`,
+    ContentType,
+  });
+  const url = await getSignedUrl(s3Client(), command, { expiresIn });
+  if (!command?.input?.Key || !url)
+    throw new BadRequestException("Could not create pre-signed URL");
+  return { url, key: command.input.Key };
 };

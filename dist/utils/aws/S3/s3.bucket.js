@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.uploadLargeFile = exports.uploadFiles = exports.uploadFile = void 0;
+exports.createPreSignedUrl = exports.uploadLargeFile = exports.uploadFiles = exports.uploadFile = void 0;
 const client_s3_1 = require("@aws-sdk/client-s3");
 const uuid_1 = require("uuid");
 const fs_1 = require("fs");
@@ -9,6 +9,7 @@ const s3_1 = require("../../../config/s3");
 const lib_storage_1 = require("@aws-sdk/lib-storage");
 const response_1 = require("../../response");
 const multer_1 = require("../../multer");
+const s3_request_presigner_1 = require("@aws-sdk/s3-request-presigner");
 const uploadFile = async ({ Bucket = env_1.AWS_BUCKET_NAME, ACL = "private", path = "general", file, }) => {
     if (!file)
         throw new response_1.BadRequestException("No file provided");
@@ -80,3 +81,15 @@ const uploadLargeFile = async ({ Bucket = env_1.AWS_BUCKET_NAME, ACL = "private"
     return Key;
 };
 exports.uploadLargeFile = uploadLargeFile;
+const createPreSignedUrl = async ({ Bucket = env_1.AWS_BUCKET_NAME, path, ContentType, originalname, expiresIn = 3600, }) => {
+    const command = new client_s3_1.PutObjectCommand({
+        Bucket,
+        Key: `${env_1.APP_NAME}/${path}/${(0, uuid_1.v4)()}_${originalname}`,
+        ContentType,
+    });
+    const url = await (0, s3_request_presigner_1.getSignedUrl)((0, s3_1.s3Client)(), command, { expiresIn });
+    if (!command?.input?.Key || !url)
+        throw new response_1.BadRequestException("Could not create pre-signed URL");
+    return { url, key: command.input.Key };
+};
+exports.createPreSignedUrl = createPreSignedUrl;
