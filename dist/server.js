@@ -15,6 +15,10 @@ const error_middleware_1 = __importDefault(require("./middlewares/error.middlewa
 const response_1 = require("./utils/response");
 const connection_db_1 = __importDefault(require("./database/connection.db"));
 const user_controller_1 = __importDefault(require("./modules/user/user.controller"));
+const S3_1 = require("./utils/aws/S3");
+const node_util_1 = require("node:util");
+const node_stream_1 = require("node:stream");
+const createWriteStreamPipeline = (0, node_util_1.promisify)(node_stream_1.pipeline);
 const app = (0, express_1.default)();
 const port = env_1.PORT || 8303;
 const bootstrap = async () => {
@@ -37,6 +41,19 @@ const bootstrap = async () => {
         return res
             .status(200)
             .json({ message: `Welcome To ${env_1.APP_NAME} Landing Page 👋 ! ` });
+    });
+    app.get("/upload/*path", async (req, res) => {
+        const { fileName, download = "false" } = req.query;
+        const { path } = req.params;
+        const Key = path.join('/');
+        const s3Response = await (0, S3_1.getAsset)({ Key });
+        if (!s3Response?.Body)
+            throw new response_1.BadRequestException("Fail to fetch this asset");
+        res.setHeader("Content-Type", `${s3Response.ContentType || "application/octet-stream"}`);
+        if (download == "true") {
+            res.setHeader("Content-Disposition", `attachment; filename="${fileName || Key.split("/").pop()}"`);
+        }
+        return await createWriteStreamPipeline(s3Response.Body, res);
     });
     app.use(/(.*)/, (req, res) => {
         throw new response_1.NotFoundException(`Url ${req.originalUrl} not found, check your endpoint and the method used`);

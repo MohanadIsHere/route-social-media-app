@@ -1,4 +1,9 @@
-import { ObjectCannedACL, PutObjectCommand } from "@aws-sdk/client-s3";
+import {
+  GetObjectCommand,
+  GetObjectCommandOutput,
+  ObjectCannedACL,
+  PutObjectCommand,
+} from "@aws-sdk/client-s3";
 import { v4 as uuid } from "uuid";
 import { createReadStream } from "fs";
 import { APP_NAME, AWS_BUCKET_NAME } from "../../../config/env";
@@ -117,7 +122,7 @@ export const createPreSignedUrl = async ({
   path,
   ContentType,
   originalname,
-  expiresIn = 3600,
+  expiresIn = 1800, // 30 minutes
 }: {
   Bucket?: string;
   path?: string;
@@ -127,11 +132,24 @@ export const createPreSignedUrl = async ({
 }): Promise<{ url: string; key: string }> => {
   const command = new PutObjectCommand({
     Bucket,
-    Key: `${APP_NAME}/${path}/${uuid()}_${originalname}`,
+    Key: `${APP_NAME}/${path}/${uuid()}_pre_${originalname}`,
     ContentType,
   });
   const url = await getSignedUrl(s3Client(), command, { expiresIn });
   if (!command?.input?.Key || !url)
     throw new BadRequestException("Could not create pre-signed URL");
   return { url, key: command.input.Key };
+};
+export const getAsset = async ({
+  Bucket = AWS_BUCKET_NAME as string,
+  Key,
+}: {
+  Bucket?: string;
+  Key: string;
+}): Promise<GetObjectCommandOutput> => {
+  const command = new GetObjectCommand({
+    Bucket,
+    Key,
+  });
+  return await s3Client().send(command);
 };

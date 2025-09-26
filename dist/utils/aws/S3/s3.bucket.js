@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createPreSignedUrl = exports.uploadLargeFile = exports.uploadFiles = exports.uploadFile = void 0;
+exports.getAsset = exports.createPreSignedUrl = exports.uploadLargeFile = exports.uploadFiles = exports.uploadFile = void 0;
 const client_s3_1 = require("@aws-sdk/client-s3");
 const uuid_1 = require("uuid");
 const fs_1 = require("fs");
@@ -81,10 +81,10 @@ const uploadLargeFile = async ({ Bucket = env_1.AWS_BUCKET_NAME, ACL = "private"
     return Key;
 };
 exports.uploadLargeFile = uploadLargeFile;
-const createPreSignedUrl = async ({ Bucket = env_1.AWS_BUCKET_NAME, path, ContentType, originalname, expiresIn = 3600, }) => {
+const createPreSignedUrl = async ({ Bucket = env_1.AWS_BUCKET_NAME, path, ContentType, originalname, expiresIn = 1800, }) => {
     const command = new client_s3_1.PutObjectCommand({
         Bucket,
-        Key: `${env_1.APP_NAME}/${path}/${(0, uuid_1.v4)()}_${originalname}`,
+        Key: `${env_1.APP_NAME}/${path}/${(0, uuid_1.v4)()}_pre_${originalname}`,
         ContentType,
     });
     const url = await (0, s3_request_presigner_1.getSignedUrl)((0, s3_1.s3Client)(), command, { expiresIn });
@@ -93,3 +93,11 @@ const createPreSignedUrl = async ({ Bucket = env_1.AWS_BUCKET_NAME, path, Conten
     return { url, key: command.input.Key };
 };
 exports.createPreSignedUrl = createPreSignedUrl;
+const getAsset = async ({ Bucket = env_1.AWS_BUCKET_NAME, Key, }) => {
+    const command = new client_s3_1.GetObjectCommand({
+        Bucket,
+        Key,
+    });
+    return await (0, s3_1.s3Client)().send(command);
+};
+exports.getAsset = getAsset;
