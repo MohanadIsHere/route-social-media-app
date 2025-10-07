@@ -1,8 +1,7 @@
 import { Router } from "express";
-import { authentication } from "../../middlewares/authentication.middleware";
+import { authentication } from "../../middlewares";
 import UserService from "./user.service";
 import { TokenEnum } from "../../utils/tokens";
-import { cloudFileUpload, fileValidation, StorageApproachEnum } from "../../utils/multer";
 
 const userRouter = Router();
 

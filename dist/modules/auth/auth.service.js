@@ -1,16 +1,16 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const user_model_1 = require("../../database/models/user.model");
-const user_repository_1 = require("../../database/repository/user.repository");
+const models_1 = require("../../database/models");
 const google_auth_library_1 = require("google-auth-library");
 const env_1 = require("../../config/env");
-const events_1 = require("../../utils/events");
 const hash_1 = require("../../utils/security/hash");
 const templates_1 = require("../../utils/templates");
 const response_1 = require("../../utils/response");
 const tokens_1 = require("../../utils/tokens");
+const events_1 = require("../../utils/events");
+const repository_1 = require("../../database/repository");
 class AuthService {
-    userModel = new user_repository_1.UserRepository(user_model_1.User);
+    userModel = new repository_1.UserRepository(models_1.User);
     constructor() { }
     async verifyGmailAccount({ idToken, }) {
         const client = new google_auth_library_1.OAuth2Client();
@@ -30,7 +30,7 @@ class AuthService {
         const { email, given_name, family_name, picture } = await this.verifyGmailAccount({ idToken });
         let user = await this.userModel.findOne({ email: email });
         if (user) {
-            if (user.provider === user_model_1.UserProviders.google) {
+            if (user.provider === models_1.UserProviders.google) {
                 return await this.loginWithGmail(req, res);
             }
             throw new response_1.ConflictException(`Email already exist with ${user.provider} provider`);
@@ -40,19 +40,20 @@ class AuthService {
                 firstName: given_name,
                 lastName: family_name,
                 email: email,
-                profilePicture: picture,
+                profileImage: picture,
                 confirmedAt: new Date(),
                 confirmed: true,
-                provider: user_model_1.UserProviders.google,
+                provider: models_1.UserProviders.google,
             },
         });
         if (!user)
             throw new response_1.BadRequestException("Failed to register with gmail, please try again later");
         const credentials = (0, tokens_1.createLoginCredentials)(user);
-        return response_1.SuccessResponse.created({
+        return (0, response_1.successResponse)({
             res,
             message: "User registered successfully",
             data: { credentials },
+            statusCode: 201,
         });
     };
     register = async (req, res) => {
@@ -62,9 +63,10 @@ class AuthService {
                 otpExpiresIn: new Date(Date.now() + 10 * 60 * 1000),
             },
         });
-        return response_1.SuccessResponse.created({
+        return (0, response_1.successResponse)({
             res,
             message: "User registered successfully, please check your email for verification.",
+            statusCode: 201,
         });
     };
     verifyEmail = async (req, res) => {
@@ -90,7 +92,7 @@ class AuthService {
                     $unset: { confirmEmailOtp: "", otpExpiresIn: "" },
                 },
             });
-            events_1.eventEmitter.emit("sendEmail", {
+            events_1.emailEvents.emit("sendEmail", {
                 from: `"${env_1.APP_NAME}" <${env_1.APP_EMAIL}>`,
                 to: user.email,
                 subject: "Email Verified",
@@ -99,7 +101,7 @@ class AuthService {
                     firstName: user.firstName,
                 }),
             });
-            return response_1.SuccessResponse.ok({
+            return (0, response_1.successResponse)({
                 res,
                 message: "Email verified successfully.",
             });
@@ -113,12 +115,12 @@ class AuthService {
         });
         const user = await this.userModel.findOne({
             email: email,
-            provider: user_model_1.UserProviders.google,
+            provider: models_1.UserProviders.google,
         });
         if (!user)
             throw new response_1.NotFoundException("Email does not exist with google provider");
         const credentials = (0, tokens_1.createLoginCredentials)(user);
-        return response_1.SuccessResponse.ok({
+        return (0, response_1.successResponse)({
             res,
             message: "User logged in successfully",
             data: { credentials },
@@ -138,7 +140,7 @@ class AuthService {
         if (!isPasswordValid)
             throw new response_1.BadRequestException("Invalid credentials");
         const credentials = (0, tokens_1.createLoginCredentials)(user);
-        return response_1.SuccessResponse.ok({
+        return (0, response_1.successResponse)({
             res,
             message: "User logged in successfully",
             data: {
@@ -150,7 +152,7 @@ class AuthService {
         const { email } = req.body || {};
         const user = await this.userModel.findOne({
             email,
-            provider: user_model_1.UserProviders.system,
+            provider: models_1.UserProviders.system,
             confirmed: { $exists: true },
         });
         if (!user)
@@ -164,7 +166,7 @@ class AuthService {
         });
         if (!result?.matchedCount)
             throw new response_1.BadRequestException("Failed to send reset password otp, please try again later");
-        events_1.eventEmitter.emit("sendEmail", {
+        events_1.emailEvents.emit("sendEmail", {
             from: `"${env_1.APP_NAME}" <${env_1.APP_EMAIL}>`,
             to: user.email,
             subject: "Reset Password",
@@ -174,7 +176,7 @@ class AuthService {
                 firstName: user.firstName,
             }),
         });
-        return response_1.SuccessResponse.ok({
+        return (0, response_1.successResponse)({
             res,
             message: "Otp Sent, please check your inbox for the otp, check your spams if you didn't get the email",
         });
@@ -187,7 +189,7 @@ class AuthService {
             email,
             confirmed: { $exists: true },
             resetPasswordOtp: { $exists: true },
-            provider: user_model_1.UserProviders.system,
+            provider: models_1.UserProviders.system,
         });
         if (!user)
             throw new response_1.NotFoundException("User not found due to one of the following reasons: [not registered, Invalid provider, not confirmed,otp does not exist]");
@@ -208,7 +210,7 @@ class AuthService {
         });
         if (!result.matchedCount)
             throw new response_1.BadRequestException("Failed to reset password, please try again later");
-        events_1.eventEmitter.emit("sendEmail", {
+        events_1.emailEvents.emit("sendEmail", {
             from: `"${env_1.APP_NAME}" <${env_1.APP_EMAIL}>`,
             to: user.email,
             subject: "Password Reset",
@@ -217,7 +219,7 @@ class AuthService {
                 firstName: user.firstName,
             }),
         });
-        return response_1.SuccessResponse.ok({ res, message: "Password Reset Successfully" });
+        return (0, response_1.successResponse)({ res, message: "Password Reset Successfully" });
     };
     logout = async (req, res) => {
         const { flag } = req.body || {};
@@ -237,14 +239,16 @@ class AuthService {
             update,
         });
         return statusCode === 201
-            ? response_1.SuccessResponse.created({
+            ? (0, response_1.successResponse)({
                 res,
+                statusCode,
                 message: flag === tokens_1.LogoutEnum.only
                     ? "Logged out successfully from this device"
                     : "Logged out successfully from all devices",
             })
-            : response_1.SuccessResponse.ok({
+            : (0, response_1.successResponse)({
                 res,
+                statusCode,
                 message: flag === tokens_1.LogoutEnum.only
                     ? "Logged out successfully from this device"
                     : "Logged out successfully from all devices",

@@ -8,6 +8,12 @@ const validation = (schema) => {
         for (const key of Object.keys(schema)) {
             if (!schema[key])
                 continue;
+            if (req.file) {
+                req.body.attachment = req.file;
+            }
+            if (req.files) {
+                req.body.attachments = req.files;
+            }
             const { error, success } = schema[key].safeParse(req[key]);
             if (!success) {
                 const errors = error;
@@ -15,7 +21,7 @@ const validation = (schema) => {
                     key,
                     issues: errors.issues.map((issue) => ({
                         message: issue.message,
-                        path: issue.path[0],
+                        path: issue.path,
                     })),
                 });
             }

@@ -26,5 +26,8 @@ class DatabaseRepository {
     async findFilter({ filter, }) {
         return this.model.find(filter).exec();
     }
+    async findByIdAndUpdate({ id, update, options = { new: true }, }) {
+        return await this.model.findByIdAndUpdate(id, { ...update, $inc: { __v: 1 } }, options);
+    }
 }
 exports.DatabaseRepository = DatabaseRepository;

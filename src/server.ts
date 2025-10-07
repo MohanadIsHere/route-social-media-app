@@ -6,14 +6,13 @@ import { APP_NAME, PORT } from "./config/env";
 import { rateLimit } from "express-rate-limit";
 import morgan from "morgan";
 import chalk from "chalk";
-import authRouter from "./modules/auth/auth.controller";
-import errorMiddleware from "./middlewares/error.middleware";
+import {errorMiddleware} from "./middlewares";
 import { BadRequestException, NotFoundException } from "./utils/response";
 import connectToDatabase from "./database/connection.db";
-import userRouter from "./modules/user/user.controller";
-import { getAsset } from "./utils/aws/S3";
-import {promisify} from "node:util"
+import { promisify } from "node:util";
 import { pipeline } from "node:stream";
+import { getFile } from "./utils/aws/S3";
+import { userRouter, authRouter, postRouter } from "./modules";
 const createWriteStreamPipeline = promisify(pipeline);
 
 const app = express();
@@ -39,37 +38,49 @@ const bootstrap = async (): Promise<void> => {
   // End Points
   app.use("/api/auth", authRouter);
   app.use("/api/users", userRouter);
+  app.use("/api/posts", postRouter);
+
 
   app.get("/", (req: Request, res: Response) => {
     return res
       .status(200)
       .json({ message: `Welcome To ${APP_NAME} Landing Page 👋 ! ` });
   });
-  app.get("/upload/*path", async(req:Request, res:Response): Promise<void> => {
-    const {fileName,download = "false"}:{fileName?:string,download?:string} = req.query
+  app.get(
+    "/upload/*path",
+    async (req: Request, res: Response): Promise<void> => {
+      const {
+        fileName,
+        download = "false",
+      }: { fileName?: string; download?: string } = req.query;
 
-    const {path} = req.params as unknown as {path:string[]}
-    const Key = path.join('/')
-    const s3Response = await getAsset({Key})
-    if(!s3Response?.Body) throw new BadRequestException("Fail to fetch this asset")
+      const { path } = req.params as unknown as { path: string[] };
+      const Key = path.join("/");
+      const s3Response = await getFile({ Key });
+      if (!s3Response?.Body)
+        throw new BadRequestException("Fail to fetch this asset");
       res.setHeader(
         "Content-Type",
         `${s3Response.ContentType || "application/octet-stream"}`
       );
-      if(download == "true"){
+      if (download == "true") {
         res.setHeader(
-        "Content-Disposition",
-        `attachment; filename="${fileName || Key.split("/").pop()}"`
+          "Content-Disposition",
+          `attachment; filename="${fileName || Key.split("/").pop()}"`
+        );
+      }
+      return await createWriteStreamPipeline(
+        s3Response.Body as NodeJS.ReadableStream,
+        res
       );
     }
-      return await createWriteStreamPipeline(s3Response.Body as NodeJS.ReadableStream,res);
-  })
-
+  );
   app.use(/(.*)/, (req: Request, res: Response) => {
     throw new NotFoundException(
       `Url ${req.originalUrl} not found, check your endpoint and the method used`
     );
   });
+
   // error middleware
   app.use(errorMiddleware);
 

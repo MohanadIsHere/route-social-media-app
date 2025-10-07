@@ -4,9 +4,10 @@ exports.User = exports.UserProviders = exports.UserRoles = exports.UserGenders =
 const mongoose_1 = require("mongoose");
 const hash_1 = require("../../utils/security/hash");
 const encryption_1 = require("../../utils/security/encryption");
-const events_1 = require("../../utils/events");
 const env_1 = require("../../config/env");
 const templates_1 = require("../../utils/templates");
+const email_events_1 = require("../../utils/events/email.events");
+const eventEmitter_1 = require("../../utils/events/eventEmitter");
 var UserGenders;
 (function (UserGenders) {
     UserGenders["male"] = "male";
@@ -38,7 +39,8 @@ const userSchema = new mongoose_1.Schema({
     gender: { type: String, enum: UserGenders, default: UserGenders.male },
     role: { type: String, enum: UserRoles, default: UserRoles.user },
     confirmed: { type: Boolean },
-    profilePicture: { type: String },
+    profileImage: { type: String },
+    tmpProfileImage: { type: String },
     otpExpiresIn: { type: Date },
     coverImages: [String],
     provider: {
@@ -83,17 +85,15 @@ userSchema.pre("save", async function (next) {
         this.phone = (0, encryption_1.encryptText)({ cipherText: this.phone });
     }
     if (this.isNew && !this.confirmed && this.provider !== UserProviders.google) {
-        plainOtp = (0, events_1.otpGen)();
+        plainOtp = (0, email_events_1.otpGen)();
         this.confirmEmailOtp = await (0, hash_1.hashText)({ plainText: plainOtp });
     }
     next();
 });
 let plainOtp = "";
 userSchema.post("save", function (doc) {
-    if (!doc.confirmed &&
-        doc.provider !== UserProviders.google &&
-        plainOtp) {
-        events_1.eventEmitter.emit("sendEmail", {
+    if (!doc.confirmed && doc.provider !== UserProviders.google && plainOtp) {
+        eventEmitter_1.emailEvents.emit("sendEmail", {
             from: `"${env_1.APP_NAME}" <${env_1.APP_EMAIL}>`,
             to: doc.email,
             subject: "Email Verification",

@@ -9,12 +9,19 @@ export const validation = (schema: SchemaType) => {
       key: KeyReqType;
       issues: Array<{
         message: string;
-        path: string | number | symbol | undefined;
+        path: (string | number | symbol | undefined)[];
       }>;
     }> = [];
 
     for (const key of Object.keys(schema) as KeyReqType[]) {
       if (!schema[key]) continue;
+      if(req.file){
+        req.body.attachment = req.file
+      }
+      if(req.files){
+        
+        req.body.attachments = req.files
+      }
 
       const { error, success } = schema[key].safeParse(req[key]);
       if (!success) {
@@ -23,7 +30,7 @@ export const validation = (schema: SchemaType) => {
           key,
           issues: errors.issues.map((issue) => ({
             message: issue.message,
-            path: issue.path[0],
+            path: issue.path,
           })),
         });
       }

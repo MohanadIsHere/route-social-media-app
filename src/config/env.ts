@@ -22,4 +22,5 @@ export const {
   AWS_ACCESS_KEY_ID,
   AWS_SECRET_ACCESS_KEY,
   AWS_BUCKET_NAME,
+  AWS_PRE_SIGNED_URL_EXPIRES_IN,
 } = process.env;

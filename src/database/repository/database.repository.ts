@@ -1,12 +1,16 @@
 import type {
   CreateOptions,
+  FlattenMaps,
   HydratedDocument,
+  Types,
   UpdateQuery,
   UpdateResult,
 } from "mongoose";
 import { Model } from "mongoose";
 import { NotFoundException } from "../../utils/response";
 import type { RootFilterQuery } from "mongoose";
+import { QueryOptions } from "mongoose";
+export type Lean<T> = HydratedDocument<FlattenMaps<T>>;
 export abstract class DatabaseRepository<TDocument> {
   constructor(protected readonly model: Model<TDocument>) {}
 
@@ -53,5 +57,20 @@ export abstract class DatabaseRepository<TDocument> {
     filter: Partial<RootFilterQuery<TDocument>>;
   }): Promise<HydratedDocument<TDocument>[]> {
     return this.model.find(filter).exec();
+  }
+  async findByIdAndUpdate({
+    id,
+    update,
+    options = { new: true },
+  }: {
+    id: Types.ObjectId;
+    update: UpdateQuery<TDocument>;
+    options?: QueryOptions;
+  }): Promise<HydratedDocument<TDocument> | null | Lean<TDocument>> {
+    return await this.model.findByIdAndUpdate(
+      id,
+      { ...update, $inc: { __v: 1 } },
+      options
+    );
   }
 }

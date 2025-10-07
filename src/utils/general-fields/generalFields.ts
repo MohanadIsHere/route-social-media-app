@@ -1,61 +1,99 @@
 import { z } from "zod";
-import { UserRoles } from "../../database/models/user.model";
+import { UserRoles } from "../../database/models";
+import { Types } from "mongoose";
+
 export const generalFields = {
+  id: z.string().refine(
+            (data) => {
+              return Types.ObjectId.isValid(data);
+            },
+            { message: "Invalid tag ID" }
+          ),
+  file: function (mimetype: string[]) {
+    return z
+      .strictObject({
+        fieldname: z.string(),
+        originalname: z.string(),
+        encoding: z.string(),
+        mimetype: z.enum(mimetype, {
+          error: `File type must be one of: ${mimetype.join(", ")}}`,
+        }),
+        size: z.number(),
+        buffer: z.any().optional(),
+        path: z.string().optional(),
+      })
+      .refine((data) => data.buffer || data.path, {
+        message: "File must have either buffer or path",
+        path: ["file"],
+      });
+  },
+
   firstName: z
-    .string({ error: "Invalid first name" })
+    .string({ message: "Invalid first name" })
     .min(2, { message: "First name must be at least 2 characters long" })
     .max(100, { message: "First name must be at most 100 characters long" })
     .transform((val) => val.trim()),
+
   middleName: z
-    .string({ error: "Invalid middle name" })
+    .string({ message: "Invalid middle name" })
     .min(2, { message: "Middle name must be at least 2 characters long" })
     .max(100, { message: "Middle name must be at most 100 characters long" })
     .transform((val) => val.trim()),
+
   lastName: z
-    .string({ error: "Invalid last name" })
+    .string({ message: "Invalid last name" })
     .min(2, { message: "Last name must be at least 2 characters long" })
     .max(100, { message: "Last name must be at most 100 characters long" })
     .transform((val) => val.trim()),
+
   role: z
-    .nativeEnum(UserRoles, { error: () => ({ message: "Invalid role" }) })
+    .nativeEnum(UserRoles, { message: "Invalid role" })
     .transform((val) =>
       typeof val === "string" ? val.trim().toLowerCase() : val
     ),
+
   address: z
-    .string({ error: "Invalid address" })
+    .string({ message: "Invalid address" })
     .min(5, { message: "Address must be at least 5 characters long" })
     .max(200, { message: "Address must be at most 200 characters long" })
     .transform((val) => val.trim()),
+
   username: z
-    .string({ error: "Invalid username" })
+    .string({ message: "Invalid username" })
     .min(2, { message: "Username must be at least 2 characters long" })
     .max(100, { message: "Username must be at most 100 characters long" })
     .transform((val) => val.trim()),
+
   email: z
-    .email({ error: "Invalid email address" })
+    .string({ message: "Invalid email address" })
+    .email()
     .transform((val) => val.trim().toLowerCase()),
+
   phone: z
-    .string({ error: "Invalid phone number" })
+    .string({ message: "Invalid phone number" })
     .min(10, { message: "Phone number must be at least 10 characters long" })
     .max(15, { message: "Phone number must be at most 15 characters long" })
     .regex(/^\+?[1-9]\d{1,14}$/, {
       message: "Phone number must be a valid international format",
     }),
+
   password: z
-    .string({ error: "Invalid password" })
+    .string({ message: "Invalid password" })
     .min(6, { message: "Password must be at least 6 characters long" })
     .max(100, { message: "Password must be at most 100 characters long" })
-    .regex(/^(?=.*[a-z])(?=.*[A-z])(?=.*\d)(?=.*[^a-zA-z\d]).{8,}$/, {
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).{8,}$/, {
       message:
-        "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character",
+        "Password must contain at least one uppercase, one lowercase, one number, and one special character",
     })
     .transform((val) => val.trim()),
+
   confirmPassword: z
-    .string({ error: "Invalid confirm password" })
+    .string({ message: "Invalid confirm password" })
     .transform((val) => val.trim()),
 
   otp: z
-    .string({ error: "Invalid OTP" })
-    .length(6, "OTP must be 6 characters long"),
-  profilePicture: z.url({ error: "Invalid profile picture URL" }),
+    .string({ message: "Invalid OTP" })
+    .length(6, { message: "OTP must be 6 characters long" }),
+
+  profilePicture: z.string({ message: "Invalid profile picture URL" }).url(),
 };

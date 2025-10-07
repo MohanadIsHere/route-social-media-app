@@ -1,10 +1,5 @@
 import type { Request, Response } from "express";
-import {
-  type IUser,
-  User,
-  UserProviders,
-} from "../../database/models/user.model";
-import { UserRepository } from "../../database/repository/user.repository";
+import { User, UserProviders, IUser } from "../../database/models";
 import { OAuth2Client, type TokenPayload } from "google-auth-library";
 
 import { APP_EMAIL, APP_NAME, WEB_CLIENT_ID } from "../../config/env";
@@ -15,14 +10,13 @@ import type {
   ResetPasswordDto,
   SendForgetPasswordCodeDto,
 } from "./dto";
-import { eventEmitter, otpGen } from "../../utils/events";
 import { compareHash, hashText } from "../../utils/security/hash";
 import { emailTemplates } from "../../utils/templates";
 import {
   BadRequestException,
   ConflictException,
   NotFoundException,
-  SuccessResponse,
+  successResponse,
 } from "../../utils/response";
 import {
   createLoginCredentials,
@@ -31,6 +25,9 @@ import {
 } from "../../utils/tokens";
 import type { UpdateQuery } from "mongoose";
 import type { JwtPayload } from "jsonwebtoken";
+import { emailEvents, otpGen } from "../../utils/events";
+import { UserRepository } from "../../database/repository";
+import { ILoginResponse, IRegisterWithGmailResponse } from "./auth.entities";
 
 class AuthService {
   private userModel = new UserRepository(User);
@@ -77,7 +74,7 @@ class AuthService {
         firstName: given_name as string,
         lastName: family_name as string,
         email: email as string,
-        profilePicture: picture as string,
+        profileImage: picture as string,
         confirmedAt: new Date(),
         confirmed: true,
         provider: UserProviders.google,
@@ -89,10 +86,11 @@ class AuthService {
       );
     const credentials = createLoginCredentials(user);
 
-    return SuccessResponse.created({
+    return successResponse<IRegisterWithGmailResponse>({
       res,
       message: "User registered successfully",
       data: { credentials },
+      statusCode: 201,
     });
   };
 
@@ -104,10 +102,11 @@ class AuthService {
       } as Partial<IUser>,
     });
 
-    return SuccessResponse.created({
+    return successResponse({
       res,
       message:
         "User registered successfully, please check your email for verification.",
+      statusCode: 201,
     });
   };
 
@@ -138,7 +137,7 @@ class AuthService {
           $unset: { confirmEmailOtp: "", otpExpiresIn: "" },
         },
       });
-      eventEmitter.emit("sendEmail", {
+      emailEvents.emit("sendEmail", {
         from: `"${APP_NAME}" <${APP_EMAIL}>`,
         to: user.email,
         subject: "Email Verified",
@@ -148,7 +147,7 @@ class AuthService {
         }),
       });
 
-      return SuccessResponse.ok({
+      return successResponse({
         res,
         message: "Email verified successfully.",
       });
@@ -171,7 +170,7 @@ class AuthService {
 
     const credentials = createLoginCredentials(user);
 
-    return SuccessResponse.ok({
+    return successResponse<ILoginResponse>({
       res,
       message: "User logged in successfully",
       data: { credentials },
@@ -193,7 +192,7 @@ class AuthService {
 
     // generate credentials
     const credentials = createLoginCredentials(user);
-    return SuccessResponse.ok({
+    return successResponse<ILoginResponse>({
       res,
       message: "User logged in successfully",
       data: {
@@ -227,7 +226,7 @@ class AuthService {
       throw new BadRequestException(
         "Failed to send reset password otp, please try again later"
       );
-    eventEmitter.emit("sendEmail", {
+    emailEvents.emit("sendEmail", {
       from: `"${APP_NAME}" <${APP_EMAIL}>`,
       to: user.email,
       subject: "Reset Password",
@@ -237,7 +236,7 @@ class AuthService {
         firstName: user.firstName,
       }),
     });
-    return SuccessResponse.ok({
+    return successResponse({
       res,
       message:
         "Otp Sent, please check your inbox for the otp, check your spams if you didn't get the email",
@@ -282,7 +281,7 @@ class AuthService {
         "Failed to reset password, please try again later"
       );
 
-    eventEmitter.emit("sendEmail", {
+    emailEvents.emit("sendEmail", {
       from: `"${APP_NAME}" <${APP_EMAIL}>`,
       to: user.email,
       subject: "Password Reset",
@@ -292,7 +291,7 @@ class AuthService {
       }),
     });
 
-    return SuccessResponse.ok({ res, message: "Password Reset Successfully" });
+    return successResponse({ res, message: "Password Reset Successfully" });
   };
   logout = async (req: Request, res: Response): Promise<Response> => {
     const { flag }: LogoutBodyDto = req.body || {};
@@ -315,15 +314,17 @@ class AuthService {
     });
 
     return statusCode === 201
-      ? SuccessResponse.created({
+      ? successResponse({
           res,
+          statusCode,
           message:
             flag === LogoutEnum.only
               ? "Logged out successfully from this device"
               : "Logged out successfully from all devices",
         })
-      : SuccessResponse.ok({
+      : successResponse({
           res,
+          statusCode,
           message:
             flag === LogoutEnum.only
               ? "Logged out successfully from this device"

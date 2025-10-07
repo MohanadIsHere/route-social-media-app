@@ -1,9 +1,10 @@
 import { Schema, models, model, type HydratedDocument } from "mongoose";
 import { hashText } from "../../utils/security/hash";
 import { encryptText } from "../../utils/security/encryption";
-import { eventEmitter, otpGen } from "../../utils/events";
 import { APP_EMAIL, APP_NAME } from "../../config/env";
 import { emailTemplates } from "../../utils/templates";
+import { otpGen } from "../../utils/events/email.events";
+import { emailEvents } from "../../utils/events/eventEmitter";
 
 export enum UserGenders {
   male = "male",
@@ -30,7 +31,9 @@ export interface IUser {
   gender: UserGenders;
   role: UserRoles;
   provider?: string;
-  profilePicture?: string;
+  profileImage?: string;
+  tmpProfileImage?: string;
+
   coverImages?: Array<string>;
   confirmEmailOtp?: string;
   otpExpiresIn?: Date;
@@ -57,7 +60,8 @@ const userSchema = new Schema<IUser>(
     gender: { type: String, enum: UserGenders, default: UserGenders.male },
     role: { type: String, enum: UserRoles, default: UserRoles.user },
     confirmed: { type: Boolean },
-    profilePicture: { type: String },
+    profileImage: { type: String },
+    tmpProfileImage: { type: String },
     otpExpiresIn: { type: Date },
     coverImages: [String],
 
@@ -118,31 +122,21 @@ userSchema.pre("save", async function (next) {
 let plainOtp: string | null = "";
 
 userSchema.post("save", function (doc) {
-  
-  if (
-    !doc.confirmed &&
-    doc.provider !== UserProviders.google &&
-    plainOtp
-  ) {
-    eventEmitter.emit("sendEmail", {
+  if (!doc.confirmed && doc.provider !== UserProviders.google && plainOtp) {
+    emailEvents.emit("sendEmail", {
       from: `"${APP_NAME}" <${APP_EMAIL}>`,
       to: doc.email,
       subject: "Email Verification",
       text: "Please verify your email address.",
       html: emailTemplates.verifyEmail({
-        otp: plainOtp, 
+        otp: plainOtp,
         firstName: doc.firstName,
       }),
     });
 
-
-    plainOtp = null; 
+    plainOtp = null;
   }
 });
-
-
-
-
 
 export const User = models.User || model<IUser>("User", userSchema);
 export type HydratedUserDoc = HydratedDocument<IUser>;

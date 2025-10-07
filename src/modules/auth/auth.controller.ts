@@ -1,8 +1,7 @@
 import { Router } from "express";
 import AuthService from "./auth.service";
-import { validation } from "../../middlewares/validation.middleware";
+import { validation, authentication } from "../../middlewares";
 import * as validators from "./auth.validation";
-import { authentication } from "../../middlewares/authentication.middleware";
 
 const authRouter = Router();
 
