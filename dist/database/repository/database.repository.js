@@ -17,12 +17,16 @@ class DatabaseRepository {
         }
         return result;
     }
-    async updateOne({ filter, update, }) {
-        const result = await this.model.updateOne(filter, update);
-        if (!result.matchedCount) {
-            throw new response_1.NotFoundException("Document not found");
+    async updateOne({ filter, update, options, }) {
+        if (Array.isArray(update)) {
+            update.push({
+                $set: {
+                    __v: { $add: ["$__v", 1] },
+                },
+            });
+            return await this.model.updateOne(filter || {}, update, options);
         }
-        return result;
+        return await this.model.updateOne(filter || {}, { ...update, inc: { __v: 1 } }, options);
     }
     async findOne(filter) {
         return this.model.findOne(filter).exec();

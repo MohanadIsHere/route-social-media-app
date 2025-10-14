@@ -6,7 +6,6 @@ import type { JwtPayload } from "jsonwebtoken";
 import { NotFoundException, successResponse } from "../../utils/response";
 import { createPreSignedUrl } from "../../utils/aws/S3";
 import { UserRepository } from "../../database/repository";
-import { Types } from "mongoose";
 import { s3Events } from "../../utils/events";
 import { AWS_PRE_SIGNED_URL_EXPIRES_IN } from "../../config/env";
 import {
@@ -59,8 +58,10 @@ class UserService {
       originalname,
       path: `users/${req.decoded?.id}`,
     });
-    const user = await this.userModel.findByIdAndUpdate({
-      id: req.user?._id as Types.ObjectId,
+    const user = await this.userModel.findOneAndUpdate({
+      filter: {
+        _id:req.user?._id
+      },
       update: { profileImage: key, tmpProfileImage: req.user?.profileImage },
     });
 

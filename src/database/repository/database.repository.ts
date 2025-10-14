@@ -7,6 +7,7 @@ import type {
   UpdateResult,
   RootFilterQuery,
   QueryOptions,
+  MongooseUpdateQueryOptions,
 } from "mongoose";
 import { Model } from "mongoose";
 import { NotFoundException } from "../../utils/response";
@@ -43,15 +44,25 @@ export abstract class DatabaseRepository<TDocument> {
   async updateOne({
     filter,
     update,
+    options,
   }: {
     filter: Partial<RootFilterQuery<TDocument>>;
     update: UpdateQuery<TDocument>;
+    options?: MongooseUpdateQueryOptions<TDocument> | null;
   }): Promise<UpdateResult> {
-    const result = await this.model.updateOne(filter as any, update);
-    if (!result.matchedCount) {
-      throw new NotFoundException("Document not found");
+    if (Array.isArray(update)) {
+      update.push({
+        $set: {
+          __v: { $add: ["$__v", 1] },
+        },
+      });
+      return await this.model.updateOne(filter || {}, update, options);
     }
-    return result;
+    return await this.model.updateOne(
+      filter || {},
+      { ...update, inc: { __v: 1 } },
+      options
+    );
   }
 
   async findOne(

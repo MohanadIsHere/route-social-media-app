@@ -12,6 +12,13 @@ postRouter.post(
   validation(validators.createPostValidationSchema),
   postService.createPost
 );
+postRouter.patch(
+  "/:postId",
+  authentication(),
+  cloudFileUpload({ validation: fileValidation.image }).array("attachments", 2),
+  validation(validators.updatePostValidationSchema),
+  postService.updatePost
+);
 postRouter.patch("/:postId/like", authentication(), postService.likePost);
 
 export default postRouter;

@@ -35,8 +35,10 @@ class UserService {
             originalname,
             path: `users/${req.decoded?.id}`,
         });
-        const user = await this.userModel.findByIdAndUpdate({
-            id: req.user?._id,
+        const user = await this.userModel.findOneAndUpdate({
+            filter: {
+                _id: req.user?._id
+            },
             update: { profileImage: key, tmpProfileImage: req.user?.profileImage },
         });
         if (!user)

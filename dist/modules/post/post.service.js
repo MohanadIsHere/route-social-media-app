@@ -66,6 +66,85 @@ class PostService {
             },
         });
     };
+    updatePost = async (req, res) => {
+        const { postId } = req.params;
+        const post = await this.postModel.findOne({
+            _id: postId,
+            createdBy: req?.user?._id,
+        });
+        if (!post)
+            throw new response_1.NotFoundException("Post not found");
+        if (req.body.tags?.length &&
+            (await this.userModel.findFilter({
+                filter: { _id: { $in: req.body.tags, $ne: req.user?._id } },
+            })).length !== req.body.tags.length) {
+            throw new response_1.NotFoundException("One or more tags not found");
+        }
+        let attachments = [];
+        if (req.body.attachments?.length) {
+            const upload = await (0, S3_1.uploadFiles)({
+                files: req.files,
+                path: `users/${post.createdBy}/posts/${post.assetsFolderId}`,
+            });
+            attachments = upload;
+        }
+        const updatedPost = (await this.postModel.updateOne({
+            filter: {
+                _id: post._id,
+            },
+            update: [
+                {
+                    $set: {
+                        content: req.body.content,
+                        allowComments: req.body.allowComments || post.allowComments,
+                        availability: req.body.availability || post.availability,
+                        attachments: {
+                            $setUnion: [
+                                {
+                                    $setDifference: [
+                                        "$attachments",
+                                        req.body.removedAttachments || [],
+                                    ],
+                                },
+                                attachments,
+                            ],
+                        },
+                        tags: {
+                            $setUnion: [
+                                {
+                                    $setDifference: [
+                                        "$tags",
+                                        (req.body.removedTags || []).map((tag) => {
+                                            return mongoose_1.Types.ObjectId.createFromHexString(tag);
+                                        }),
+                                    ],
+                                },
+                                (req.body.tags || []).map((tag) => {
+                                    return mongoose_1.Types.ObjectId.createFromHexString(tag);
+                                }),
+                            ],
+                        },
+                    },
+                },
+            ],
+        })) || {};
+        if (!updatedPost.matchedCount) {
+            if (attachments.length) {
+                await (0, S3_1.deleteFiles)({ urls: attachments });
+            }
+            else {
+                if (req.body.removedAttachments.length) {
+                    await (0, S3_1.deleteFiles)({ urls: req.body.removedAttachments });
+                }
+            }
+            throw new response_1.BadRequestException("Fail to create post");
+        }
+        return (0, response_1.successResponse)({
+            res,
+            statusCode: 200,
+            message: "Post updated successfully",
+        });
+    };
     likePost = async (req, res) => {
         const { postId } = req.params;
         const { action } = req.query;
