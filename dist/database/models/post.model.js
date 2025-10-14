@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Post = exports.AvailabilityEnum = exports.AllowCommentsEnum = void 0;
+exports.Post = exports.LikeActionEnum = exports.AvailabilityEnum = exports.AllowCommentsEnum = void 0;
 const mongoose_1 = require("mongoose");
 const events_1 = require("../../utils/events");
 const env_1 = require("../../config/env");
@@ -18,6 +18,11 @@ var AvailabilityEnum;
     AvailabilityEnum["onlyMe"] = "only-Me";
     AvailabilityEnum["friends"] = "friends";
 })(AvailabilityEnum || (exports.AvailabilityEnum = AvailabilityEnum = {}));
+var LikeActionEnum;
+(function (LikeActionEnum) {
+    LikeActionEnum["like"] = "like";
+    LikeActionEnum["dislike"] = "dislike";
+})(LikeActionEnum || (exports.LikeActionEnum = LikeActionEnum = {}));
 const postSchema = new mongoose_1.Schema({
     content: {
         type: String,
@@ -75,5 +80,25 @@ postSchema.post("save", async function (doc) {
             }),
         });
     }
+});
+postSchema.pre(["find", "findOne"], async function (next) {
+    const query = this.getQuery();
+    if (query.paranoId === false) {
+        this.setQuery({ ...query });
+    }
+    else {
+        this.setQuery({ ...query, freezedAt: { $exists: false } });
+    }
+    next();
+});
+postSchema.pre(["findOneAndUpdate", "updateOne"], async function (next) {
+    const query = this.getQuery();
+    if (query.paranoId === false) {
+        this.setQuery({ ...query });
+    }
+    else {
+        this.setQuery({ ...query, freezedAt: { $exists: false } });
+    }
+    next();
 });
 exports.Post = mongoose_1.models.Post || (0, mongoose_1.model)("Post", postSchema);

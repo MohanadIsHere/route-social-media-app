@@ -14,6 +14,10 @@ export enum AvailabilityEnum {
   onlyMe = "only-Me",
   friends = "friends",
 }
+export enum LikeActionEnum {
+  like='like',
+  dislike='dislike'
+}
 export interface IPost {
   content?: string;
   attachments?: string[];
@@ -97,5 +101,23 @@ postSchema.post("save", async function (doc) {
       }),
     });
   }
+});
+postSchema.pre(["find", "findOne"], async function (next) {
+  const query = this.getQuery();
+  if (query.paranoId === false) {
+    this.setQuery({ ...query });
+  } else {
+    this.setQuery({ ...query, freezedAt: { $exists: false } });
+  }
+  next();
+});
+postSchema.pre(["findOneAndUpdate", "updateOne"], async function (next) {
+  const query = this.getQuery();
+  if (query.paranoId === false) {
+    this.setQuery({ ...query });
+  } else {
+    this.setQuery({ ...query, freezedAt: { $exists: false } });
+  }
+  next();
 });
 export const Post = models.Post || model<IPost>("Post", postSchema);

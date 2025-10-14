@@ -43,6 +43,7 @@ const userSchema = new mongoose_1.Schema({
     tmpProfileImage: { type: String },
     otpExpiresIn: { type: Date },
     coverImages: [String],
+    friends: [{ type: mongoose_1.Schema.Types.ObjectId, ref: "User" }],
     provider: {
         type: String,
         enum: UserProviders,
@@ -52,6 +53,7 @@ const userSchema = new mongoose_1.Schema({
     resetPasswordOtp: { type: String },
     confirmedAt: { type: Date },
     changeCredentialsAt: { type: Date },
+    freezedAt: { type: Date },
 }, {
     timestamps: true,
     optimisticConcurrency: true,

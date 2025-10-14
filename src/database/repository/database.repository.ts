@@ -5,12 +5,14 @@ import type {
   Types,
   UpdateQuery,
   UpdateResult,
+  RootFilterQuery,
+  QueryOptions,
 } from "mongoose";
 import { Model } from "mongoose";
 import { NotFoundException } from "../../utils/response";
-import type { RootFilterQuery } from "mongoose";
-import { QueryOptions } from "mongoose";
-export type Lean<T> = HydratedDocument<FlattenMaps<T>>;
+
+export type Lean<T> = FlattenMaps<T>;
+
 export abstract class DatabaseRepository<TDocument> {
   constructor(protected readonly model: Model<TDocument>) {}
 
@@ -21,7 +23,7 @@ export abstract class DatabaseRepository<TDocument> {
     data: Partial<TDocument> | Partial<TDocument>[];
     options?: CreateOptions | undefined;
   }): Promise<HydratedDocument<TDocument> | HydratedDocument<TDocument>[]> {
-    return await this.model.create(data as any, options);
+    return this.model.create(data as any, options);
   }
 
   async updateMany({
@@ -33,24 +35,31 @@ export abstract class DatabaseRepository<TDocument> {
   }): Promise<UpdateResult> {
     const result = await this.model.updateMany(filter, update);
     if (!result.matchedCount) {
-      throw new NotFoundException("Document not found");
+      throw new NotFoundException("Documents not found");
     }
     return result;
   }
+
   async updateOne({
     filter,
     update,
   }: {
-    filter: Partial<HydratedDocument<TDocument>>;
+    filter: Partial<RootFilterQuery<TDocument>>;
     update: UpdateQuery<TDocument>;
   }): Promise<UpdateResult> {
-    return await this.model.updateOne(filter as any, update);
+    const result = await this.model.updateOne(filter as any, update);
+    if (!result.matchedCount) {
+      throw new NotFoundException("Document not found");
+    }
+    return result;
   }
+
   async findOne(
     filter: Partial<RootFilterQuery<TDocument>>
   ): Promise<HydratedDocument<TDocument> | null> {
     return this.model.findOne(filter).exec();
   }
+
   async findFilter({
     filter,
   }: {
@@ -58,19 +67,32 @@ export abstract class DatabaseRepository<TDocument> {
   }): Promise<HydratedDocument<TDocument>[]> {
     return this.model.find(filter).exec();
   }
-  async findByIdAndUpdate({
-    id,
+
+  async findById(
+    id: Types.ObjectId
+  ): Promise<HydratedDocument<TDocument> | null> {
+    return this.model.findById(id).exec();
+  }
+
+  async findOneAndUpdate({
+    filter,
     update,
     options = { new: true },
   }: {
-    id: Types.ObjectId;
+    filter: RootFilterQuery<TDocument>;
     update: UpdateQuery<TDocument>;
     options?: QueryOptions;
-  }): Promise<HydratedDocument<TDocument> | null | Lean<TDocument>> {
-    return await this.model.findByIdAndUpdate(
-      id,
-      { ...update, $inc: { __v: 1 } },
+  }): Promise<HydratedDocument<TDocument> | null> {
+    const result = await this.model.findOneAndUpdate(
+      filter,
+      { $inc: { __v: 1 }, ...(update || {}) },
       options
     );
+
+    if (!result) {
+      throw new NotFoundException("Document not found");
+    }
+
+    return result;
   }
 }

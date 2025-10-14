@@ -8,17 +8,21 @@ class DatabaseRepository {
         this.model = model;
     }
     async create({ data, options, }) {
-        return await this.model.create(data, options);
+        return this.model.create(data, options);
     }
     async updateMany({ filter, update, }) {
         const result = await this.model.updateMany(filter, update);
         if (!result.matchedCount) {
-            throw new response_1.NotFoundException("Document not found");
+            throw new response_1.NotFoundException("Documents not found");
         }
         return result;
     }
     async updateOne({ filter, update, }) {
-        return await this.model.updateOne(filter, update);
+        const result = await this.model.updateOne(filter, update);
+        if (!result.matchedCount) {
+            throw new response_1.NotFoundException("Document not found");
+        }
+        return result;
     }
     async findOne(filter) {
         return this.model.findOne(filter).exec();
@@ -26,8 +30,15 @@ class DatabaseRepository {
     async findFilter({ filter, }) {
         return this.model.find(filter).exec();
     }
-    async findByIdAndUpdate({ id, update, options = { new: true }, }) {
-        return await this.model.findByIdAndUpdate(id, { ...update, $inc: { __v: 1 } }, options);
+    async findById(id) {
+        return this.model.findById(id).exec();
+    }
+    async findOneAndUpdate({ filter, update, options = { new: true }, }) {
+        const result = await this.model.findOneAndUpdate(filter, { $inc: { __v: 1 }, ...(update || {}) }, options);
+        if (!result) {
+            throw new response_1.NotFoundException("Document not found");
+        }
+        return result;
     }
 }
 exports.DatabaseRepository = DatabaseRepository;

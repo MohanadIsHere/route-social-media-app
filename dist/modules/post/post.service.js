@@ -1,11 +1,27 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.postAvailability = void 0;
 const response_1 = require("../../utils/response");
 const repository_1 = require("../../database/repository");
 const models_1 = require("../../database/models");
 const S3_1 = require("../../utils/aws/S3");
 const uuid_1 = require("uuid");
 const mongoose_1 = require("mongoose");
+const postAvailability = (req) => {
+    return [
+        { availability: models_1.AvailabilityEnum.public },
+        { availability: models_1.AvailabilityEnum.onlyMe, createdBy: req.user?._id },
+        {
+            availability: models_1.AvailabilityEnum.friends,
+            createdBy: { $in: [...(req.user?.friends || []), req.user?._id] },
+        },
+        {
+            availability: { $ne: models_1.AvailabilityEnum.onlyMe },
+            tags: { $in: req.user?._id },
+        },
+    ];
+};
+exports.postAvailability = postAvailability;
 class PostService {
     constructor() { }
     postModel = new repository_1.PostRepository(models_1.Post);
@@ -20,10 +36,12 @@ class PostService {
         let attachments = [];
         let assetsFolderId = (0, uuid_1.v4)();
         if (req.body.attachments?.length) {
-            attachments = await (0, S3_1.uploadFiles)({
+            const upload = await (0, S3_1.uploadFiles)({
                 files: req.files,
                 path: `users/${req.user?._id}/posts/${assetsFolderId}`,
             });
+            attachments = upload;
+            console.log({ upload });
         }
         const post = (await this.postModel.create({
             data: {
@@ -48,26 +66,31 @@ class PostService {
             },
         });
     };
-    likeAndUnLikePost = async (req, res) => {
+    likePost = async (req, res) => {
         const { postId } = req.params;
+        const { action } = req.query;
+        console.log(action);
+        let update = {
+            $addToSet: { likes: req.user?._id },
+        };
+        if (action === models_1.LikeActionEnum.like) {
+            update = { $push: { likes: req.user?._id } };
+        }
+        else {
+            update = { $pull: { likes: req.user?._id } };
+        }
         const post = await this.postModel.findOne({
             _id: new mongoose_1.Types.ObjectId(postId),
         });
         if (!post)
             throw new response_1.NotFoundException("Post not found");
-        console.log("post found!");
-        if (post.likes?.length && post.likes.includes(req.user?._id)) {
-            await this.postModel.findByIdAndUpdate({
-                id: new mongoose_1.Types.ObjectId(postId),
-                update: { $pull: { likes: req.user?._id } },
-            });
-        }
-        else {
-            await this.postModel.findByIdAndUpdate({
-                id: new mongoose_1.Types.ObjectId(postId),
-                update: { $push: { likes: req.user?._id } },
-            });
-        }
+        await this.postModel.findOneAndUpdate({
+            filter: {
+                _id: postId,
+                $or: (0, exports.postAvailability)(req),
+            },
+            update,
+        });
         return (0, response_1.successResponse)({ res });
     };
 }

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createPostValidationSchema = void 0;
+exports.likePostValidationSchema = exports.createPostValidationSchema = void 0;
 const zod_1 = require("zod");
 const models_1 = require("../../database/models");
 const general_fields_1 = require("../../utils/general-fields");
@@ -34,4 +34,9 @@ exports.createPostValidationSchema = {
             });
         }
     }),
+};
+exports.likePostValidationSchema = {
+    query: zod_1.z.strictObject({
+        action: zod_1.z.enum(models_1.LikeActionEnum).default(models_1.LikeActionEnum.like)
+    })
 };

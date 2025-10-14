@@ -655,7 +655,7 @@ exports.emailTemplates = {
                     "${postContent}"
                 </div>
                 <div class="post-meta">
-                    <span class="post-type">P${postType}</span>
+                    <span class="post-type">${postType}</span>
                 </div>
             </div>
 

@@ -2,7 +2,7 @@ import { Router } from "express";
 import postService from "./post.service";
 import { authentication, validation } from "../../middlewares";
 import { cloudFileUpload, fileValidation } from "../../utils/multer";
-import * as validators from "./post.validation"
+import * as validators from "./post.validation";
 
 const postRouter = Router();
 postRouter.post(
@@ -12,11 +12,6 @@ postRouter.post(
   validation(validators.createPostValidationSchema),
   postService.createPost
 );
-postRouter.patch(
-  ["/:postId/like", "/:postId/un-like"],
-  authentication(),
-  postService.likeAndUnLikePost
-);
-
+postRouter.patch("/:postId/like", authentication(), postService.likePost);
 
 export default postRouter;

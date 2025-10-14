@@ -1,4 +1,4 @@
-import { Schema, models, model, type HydratedDocument } from "mongoose";
+import { Schema, models, model, type HydratedDocument, Types } from "mongoose";
 import { hashText } from "../../utils/security/hash";
 import { encryptText } from "../../utils/security/encryption";
 import { APP_EMAIL, APP_NAME } from "../../config/env";
@@ -33,6 +33,7 @@ export interface IUser {
   provider?: string;
   profileImage?: string;
   tmpProfileImage?: string;
+  friends?: Types.ObjectId[];
 
   coverImages?: Array<string>;
   confirmEmailOtp?: string;
@@ -42,6 +43,7 @@ export interface IUser {
   changeCredentialsAt?: Date;
   createdAt?: Date;
   updatedAt?: Date;
+  freezedAt?: Date;
 }
 const userSchema = new Schema<IUser>(
   {
@@ -64,6 +66,7 @@ const userSchema = new Schema<IUser>(
     tmpProfileImage: { type: String },
     otpExpiresIn: { type: Date },
     coverImages: [String],
+    friends: [{ type: Schema.Types.ObjectId, ref: "User" }],
 
     provider: {
       type: String,
@@ -75,6 +78,7 @@ const userSchema = new Schema<IUser>(
     resetPasswordOtp: { type: String },
     confirmedAt: { type: Date },
     changeCredentialsAt: { type: Date },
+    freezedAt: { type: Date },
   },
   {
     timestamps: true,
@@ -137,6 +141,7 @@ userSchema.post("save", function (doc) {
     plainOtp = null;
   }
 });
+
 
 export const User = models.User || model<IUser>("User", userSchema);
 export type HydratedUserDoc = HydratedDocument<IUser>;

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { AllowCommentsEnum, AvailabilityEnum } from "../../database/models";
+import { AllowCommentsEnum, AvailabilityEnum, LikeActionEnum } from "../../database/models";
 import { generalFields } from "../../utils/general-fields";
 import { fileValidation } from "../../utils/multer";
 export const createPostValidationSchema = {
@@ -34,3 +34,8 @@ export const createPostValidationSchema = {
       }
     }),
 };
+export const likePostValidationSchema = {
+  query: z.strictObject({
+    action: z.enum(LikeActionEnum).default(LikeActionEnum.like)
+  })
+}
