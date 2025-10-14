@@ -73,10 +73,46 @@ export abstract class DatabaseRepository<TDocument> {
 
   async findFilter({
     filter,
+    options = {},
   }: {
     filter: Partial<RootFilterQuery<TDocument>>;
+    options?: QueryOptions;
   }): Promise<HydratedDocument<TDocument>[]> {
-    return this.model.find(filter).exec();
+    return this.model.find(filter, null, options).exec();
+  }
+  async findAndPaginate({
+    filter,
+    options = {},
+    page = 1,
+    size = 5,
+  }: {
+    filter: Partial<RootFilterQuery<TDocument>>;
+    options?: QueryOptions;
+    page?: number;
+    size?: number;
+  }): Promise<{
+    docsCount: number;
+    limit: number;
+    pages: number;
+    currentPage: number;
+    result: HydratedDocument<TDocument>[];
+  }> {
+    let docsCount: number | undefined = undefined;
+    let pages: number | undefined = undefined;
+
+    page = Math.floor(page < 1 ? 1 : page);
+    options.limit = Math.floor(size < 1 || !size ? 5 : size);
+    options.skip = (page - 1) * options.limit;
+    docsCount = await this.model.countDocuments(filter);
+    pages = Math.ceil(docsCount / options.limit);
+    const result = await this.findFilter({ filter, options });
+    return {
+      docsCount,
+      limit: options.limit,
+      pages,
+      currentPage: page,
+      result,
+    };
   }
 
   async findById(

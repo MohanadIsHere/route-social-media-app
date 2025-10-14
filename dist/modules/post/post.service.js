@@ -41,11 +41,11 @@ class PostService {
                 path: `users/${req.user?._id}/posts/${assetsFolderId}`,
             });
             attachments = upload;
-            console.log({ upload });
         }
         const post = (await this.postModel.create({
             data: {
                 ...req.body,
+                content: req.body.content || "",
                 attachments,
                 assetsFolderId,
                 createdBy: req.user?._id,
@@ -95,7 +95,7 @@ class PostService {
             update: [
                 {
                     $set: {
-                        content: req.body.content,
+                        content: req.body.content || post.content,
                         allowComments: req.body.allowComments || post.allowComments,
                         availability: req.body.availability || post.availability,
                         attachments: {
@@ -171,6 +171,21 @@ class PostService {
             update,
         });
         return (0, response_1.successResponse)({ res });
+    };
+    listPosts = async (req, res) => {
+        let { page, size } = req.query;
+        const posts = await this.postModel.findAndPaginate({
+            filter: {
+                $or: (0, exports.postAvailability)(req),
+            },
+            page,
+            size,
+        });
+        return (0, response_1.successResponse)({
+            res,
+            message: "Posts retrieved successfully",
+            data: { posts },
+        });
     };
 }
 exports.default = new PostService();

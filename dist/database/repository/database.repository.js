@@ -31,8 +31,25 @@ class DatabaseRepository {
     async findOne(filter) {
         return this.model.findOne(filter).exec();
     }
-    async findFilter({ filter, }) {
-        return this.model.find(filter).exec();
+    async findFilter({ filter, options = {}, }) {
+        return this.model.find(filter, null, options).exec();
+    }
+    async findAndPaginate({ filter, options = {}, page = 1, size = 5, }) {
+        let docsCount = undefined;
+        let pages = undefined;
+        page = Math.floor(page < 1 ? 1 : page);
+        options.limit = Math.floor(size < 1 || !size ? 5 : size);
+        options.skip = (page - 1) * options.limit;
+        docsCount = await this.model.countDocuments(filter);
+        pages = Math.ceil(docsCount / options.limit);
+        const result = await this.findFilter({ filter, options });
+        return {
+            docsCount,
+            limit: options.limit,
+            pages,
+            currentPage: page,
+            result,
+        };
     }
     async findById(id) {
         return this.model.findById(id).exec();

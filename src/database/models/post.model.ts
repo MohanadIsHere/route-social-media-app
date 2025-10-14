@@ -102,7 +102,7 @@ postSchema.post("save", async function (doc) {
     });
   }
 });
-postSchema.pre(["find", "findOne"], async function (next) {
+postSchema.pre(["find", "findOne","countDocuments"], async function (next) {
   const query = this.getQuery();
   if (query.paranoId === false) {
     this.setQuery({ ...query });

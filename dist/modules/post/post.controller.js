@@ -42,6 +42,7 @@ const middlewares_1 = require("../../middlewares");
 const multer_1 = require("../../utils/multer");
 const validators = __importStar(require("./post.validation"));
 const postRouter = (0, express_1.Router)();
+postRouter.get("/", (0, middlewares_1.authentication)(), post_service_1.default.listPosts);
 postRouter.post("/", (0, middlewares_1.authentication)(), (0, multer_1.cloudFileUpload)({ validation: multer_1.fileValidation.image }).array("attachments", 2), (0, middlewares_1.validation)(validators.createPostValidationSchema), post_service_1.default.createPost);
 postRouter.patch("/:postId", (0, middlewares_1.authentication)(), (0, multer_1.cloudFileUpload)({ validation: multer_1.fileValidation.image }).array("attachments", 2), (0, middlewares_1.validation)(validators.updatePostValidationSchema), post_service_1.default.updatePost);
 postRouter.patch("/:postId/like", (0, middlewares_1.authentication)(), post_service_1.default.likePost);

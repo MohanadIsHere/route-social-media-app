@@ -4,7 +4,14 @@ import { authentication, validation } from "../../middlewares";
 import { cloudFileUpload, fileValidation } from "../../utils/multer";
 import * as validators from "./post.validation";
 
+
 const postRouter = Router();
+postRouter.get(
+  "/",
+  authentication(),
+
+  postService.listPosts
+);
 postRouter.post(
   "/",
   authentication(),
