@@ -60,7 +60,7 @@ commentSchema.post("save", async function (doc: IComment) {
   const userModel = new UserRepository(User);
   const postModel = new PostRepository(Post);
 
-  const commentModel = new CommentRepository(Comment)
+  const commentModel = new CommentRepository(CommentModel)
 
   // send email to tagged users
   if (doc.tags?.length) {
@@ -164,4 +164,4 @@ commentSchema.pre(["findOneAndUpdate", "updateOne"], async function (next) {
   }
   next();
 });
-export const Comment = models.Comment || model<IComment>("Comment", commentSchema);
+export const CommentModel = models.Comment || model<IComment>("Comment", commentSchema);

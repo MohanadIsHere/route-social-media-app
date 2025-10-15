@@ -4,10 +4,16 @@ import {
   NotFoundException,
   successResponse,
 } from "../../utils/response";
-import { PostRepository, UserRepository } from "../../database/repository";
+import {
+  CommentRepository,
+  PostRepository,
+  UserRepository,
+} from "../../database/repository";
 import {
   AvailabilityEnum,
+  CommentModel,
   HydratedPostDoc,
+  IPost,
   LikeActionEnum,
   Post,
   User,
@@ -193,18 +199,21 @@ class PostService {
     return successResponse({ res });
   };
   getPosts = async (req: Request, res: Response): Promise<Response> => {
-    let { page, size } = req.query as unknown as {
-      page: number;
-      size: number;
-    };
+    // let { page, size } = req.query as unknown as {
+    //   page: number;
+    //   size: number;
+    // };
 
-    const posts = await this.postModel.findAndPaginate({
-      filter: {
-        $or: postAvailability(req),
-      },
+    // const posts = await this.postModel.findAndPaginate({
+    //   filter: {
+    //     $or: postAvailability(req),
+    //   },
 
-      page,
-      size,
+    //   page,
+    //   size,
+    // });
+    const posts = await this.postModel.findCursor({
+      filter: { $or: postAvailability(req) },
     });
     return successResponse({
       res,

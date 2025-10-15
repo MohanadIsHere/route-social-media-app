@@ -131,7 +131,7 @@ class CommentService {
         const update = isLiked
             ? { $pull: { likes: req.user?._id } }
             : { $addToSet: { likes: req.user?._id } };
-        const updated = await this.commentModel.findOneAndUpdate({
+        await this.commentModel.findOneAndUpdate({
             filter: { _id: commentId },
             update,
             options: { new: true },

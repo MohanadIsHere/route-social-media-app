@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Comment = void 0;
+exports.CommentModel = void 0;
 const mongoose_1 = require("mongoose");
 const events_1 = require("../../utils/events");
 const env_1 = require("../../config/env");
@@ -34,7 +34,7 @@ const commentSchema = new mongoose_1.Schema({
 commentSchema.post("save", async function (doc) {
     const userModel = new repository_1.UserRepository(user_model_1.User);
     const postModel = new repository_1.PostRepository(post_model_1.Post);
-    const commentModel = new repository_1.CommentRepository(exports.Comment);
+    const commentModel = new repository_1.CommentRepository(exports.CommentModel);
     if (doc.tags?.length) {
         const taggedUsers = [];
         for (const tagId of doc.tags) {
@@ -126,4 +126,4 @@ commentSchema.pre(["findOneAndUpdate", "updateOne"], async function (next) {
     }
     next();
 });
-exports.Comment = mongoose_1.models.Comment || (0, mongoose_1.model)("Comment", commentSchema);
+exports.CommentModel = mongoose_1.models.Comment || (0, mongoose_1.model)("Comment", commentSchema);

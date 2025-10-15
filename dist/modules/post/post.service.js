@@ -172,13 +172,8 @@ class PostService {
         return (0, response_1.successResponse)({ res });
     };
     getPosts = async (req, res) => {
-        let { page, size } = req.query;
-        const posts = await this.postModel.findAndPaginate({
-            filter: {
-                $or: (0, exports.postAvailability)(req),
-            },
-            page,
-            size,
+        const posts = await this.postModel.findCursor({
+            filter: { $or: (0, exports.postAvailability)(req) },
         });
         return (0, response_1.successResponse)({
             res,
