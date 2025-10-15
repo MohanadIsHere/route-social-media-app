@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.changeRoleValidationSchema = void 0;
+exports.rejectFriendRequestValidationSchema = exports.acceptFriendRequestValidationSchema = exports.sendFriendRequestValidationSchema = exports.changeRoleValidationSchema = void 0;
 const zod_1 = require("zod");
 const general_fields_1 = require("../../utils/general-fields");
 const models_1 = require("../../database/models");
@@ -11,4 +11,15 @@ exports.changeRoleValidationSchema = {
     body: zod_1.z.strictObject({
         role: zod_1.z.enum(models_1.UserRoles)
     })
+};
+exports.sendFriendRequestValidationSchema = {
+    params: exports.changeRoleValidationSchema.params
+};
+exports.acceptFriendRequestValidationSchema = {
+    params: zod_1.z.strictObject({
+        requestId: general_fields_1.generalFields.id,
+    }),
+};
+exports.rejectFriendRequestValidationSchema = {
+    params: exports.acceptFriendRequestValidationSchema.params
 };

@@ -10,15 +10,16 @@ const env_1 = require("../../config/env");
 class UserService {
     userModel = new repository_1.UserRepository(models_1.userModel);
     postModel = new repository_1.PostRepository(models_1.postModel);
+    friendRequestModel = new repository_1.FriendRequestRepository(models_1.friendRequestModel);
     constructor() { }
-    me = async (req, res, next) => {
+    me = async (req, res) => {
         return (0, response_1.successResponse)({
             res,
             message: "User Retrieved Successfully",
             data: { user: req.user, decoded: req.decoded },
         });
     };
-    dashboard = async (req, res, next) => {
+    dashboard = async (req, res) => {
         const result = await Promise.allSettled([
             this.userModel.findFilter({ filter: {} }),
             this.postModel.findFilter({ filter: {} }),
@@ -28,7 +29,7 @@ class UserService {
             data: { result },
         });
     };
-    changeRole = async (req, res, next) => {
+    changeRole = async (req, res) => {
         const { userId } = req.params;
         const { role } = req.body;
         const denyRoles = [role, models_1.UserRoles.superAdmin];
@@ -38,13 +39,13 @@ class UserService {
         const user = await this.userModel.findOneAndUpdate({
             filter: {
                 _id: userId,
-                role: { $nin: denyRoles }
+                role: { $nin: denyRoles },
             },
             update: {
                 role,
             },
         });
-        const result = await Promise.allSettled([
+        await Promise.allSettled([
             this.userModel.findFilter({ filter: {} }),
             this.postModel.findFilter({ filter: {} }),
         ]);
@@ -52,6 +53,92 @@ class UserService {
             throw new response_1.NotFoundException("Fail to find matching result");
         return (0, response_1.successResponse)({
             res,
+        });
+    };
+    sendFriendRequest = async (req, res) => {
+        const { userId } = req.params;
+        if (await this.userModel.findOne({
+            _id: req.user?._id,
+            friends: userId,
+        }))
+            throw new response_1.BadRequestException("This user is already a friend of you");
+        if (String(req.user?._id) === String(userId))
+            throw new response_1.BadRequestException("You cannot send a friend request to yourself");
+        const checkFriendRequestExist = await this.friendRequestModel.findOne({
+            createdBy: { $in: [req.user?._id, userId] },
+            sendTo: { $in: [req.user?._id, userId] },
+        });
+        if (checkFriendRequestExist)
+            throw new response_1.ConflictException("Friend request already exist");
+        const user = await this.userModel.findOne({
+            _id: userId,
+        });
+        if (!user)
+            throw new response_1.NotFoundException("Invalid recipient");
+        const friendRequest = await this.friendRequestModel.create({
+            data: {
+                createdBy: req.user?._id,
+                sendTo: userId,
+            },
+        });
+        if (!friendRequest)
+            throw new response_1.BadRequestException("something went wrong");
+        return (0, response_1.successResponse)({
+            res,
+            statusCode: 201,
+        });
+    };
+    acceptFriendRequest = async (req, res) => {
+        const { requestId } = req.params;
+        const friendRequest = await this.friendRequestModel.findOneAndUpdate({
+            filter: {
+                _id: requestId,
+                sendTo: req.user?._id,
+                acceptedAt: { $exists: false },
+                rejectedAt: { $exists: false },
+            },
+            update: {
+                acceptedAt: new Date(),
+            },
+        });
+        if (!friendRequest)
+            throw new response_1.NotFoundException("Fail to find matching result");
+        await Promise.all([
+            await this.userModel.updateOne({
+                filter: { _id: friendRequest.createdBy },
+                update: {
+                    $addToSet: { friends: friendRequest.sendTo },
+                },
+            }),
+            await this.userModel.updateOne({
+                filter: { _id: friendRequest.sendTo },
+                update: {
+                    $addToSet: { friends: friendRequest.createdBy },
+                },
+            }),
+        ]);
+        return (0, response_1.successResponse)({
+            res,
+            statusCode: 200,
+        });
+    };
+    rejectFriendRequest = async (req, res) => {
+        const { requestId } = req.params;
+        const friendRequest = await this.friendRequestModel.findOneAndUpdate({
+            filter: {
+                _id: requestId,
+                sendTo: req.user?._id,
+                acceptedAt: { $exists: false },
+            },
+            update: {
+                rejectedAt: new Date(),
+            },
+        });
+        if (!friendRequest)
+            throw new response_1.NotFoundException("Fail to find matching result");
+        return (0, response_1.successResponse)({
+            res,
+            statusCode: 200,
         });
     };
     refreshToken = async (req, res) => {

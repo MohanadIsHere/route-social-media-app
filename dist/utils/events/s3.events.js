@@ -15,10 +15,10 @@ exports.s3Events.on("trackProfileImageUpload", (data) => {
     console.log(chalk_1.default.blue("Tracking S3 event:"));
     console.log(data);
     setTimeout(async () => {
-        const userModel = new repository_1.UserRepository(models_1.User);
+        const _userModel = new repository_1.UserRepository(models_1.userModel);
         try {
             await (0, S3_1.getFile)({ Key: data.newImageKey });
-            const updateResult = await userModel.updateOne({
+            const updateResult = await _userModel.updateOne({
                 filter: { _id: data.userId },
                 update: {
                     $unset: { tmpProfileImage: "" },
@@ -33,7 +33,7 @@ exports.s3Events.on("trackProfileImageUpload", (data) => {
             console.log(chalk_1.default.red("Error fetching new image from S3:", error.message));
             console.log(error);
             if (error.Code === "NoSuchKey") {
-                await userModel.updateOne({
+                await _userModel.updateOne({
                     filter: { _id: data.userId },
                     update: {
                         profileImage: data.oldImageKey,

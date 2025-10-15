@@ -1,13 +1,13 @@
 import { Model, type PopulateOptions } from "mongoose";
 import { DatabaseRepository } from "./database.repository";
-import { CommentModel, IPost } from "../models";
+import { commentModel, IPost } from "../models";
 import { RootFilterQuery } from "mongoose";
 import { QueryOptions } from "mongoose";
 import { HydratedDocument } from "mongoose";
 import { CommentRepository } from "./comment.repository";
 
 export class PostRepository extends DatabaseRepository<IPost> {
-    private commentModel = new CommentRepository(CommentModel);
+    private commentModel = new CommentRepository(commentModel);
   
   constructor(protected override readonly model: Model<IPost>) {
     super(model);

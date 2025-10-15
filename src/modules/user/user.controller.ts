@@ -33,5 +33,25 @@ userRouter.post(
   authentication(TokenEnum.refresh),
   userService.refreshToken
 );
+userRouter.post(
+  "/:userId/send-friend-request",
+  authentication(),
+  validation(validators.sendFriendRequestValidationSchema),
 
+  userService.sendFriendRequest
+);
+userRouter.patch(
+  "/accept-friend-request/:requestId",
+  authentication(),
+  validation(validators.acceptFriendRequestValidationSchema),
+
+  userService.acceptFriendRequest
+);
+userRouter.patch(
+  "/reject-friend-request/:requestId",
+  authentication(),
+  validation(validators.rejectFriendRequestValidationSchema),
+
+  userService.rejectFriendRequest
+);
 export default userRouter;

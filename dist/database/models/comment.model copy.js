@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.commentModel = void 0;
+exports.CommentModel = void 0;
 const mongoose_1 = require("mongoose");
 const events_1 = require("../../utils/events");
 const env_1 = require("../../config/env");
@@ -32,17 +32,17 @@ const commentSchema = new mongoose_1.Schema({
     optimisticConcurrency: true,
 });
 commentSchema.post("save", async function (doc) {
-    const _userModel = new repository_1.UserRepository(user_model_1.userModel);
-    const _postModel = new repository_1.PostRepository(post_model_1.postModel);
-    const _commentModel = new repository_1.CommentRepository(exports.commentModel);
+    const userModel = new repository_1.UserRepository(user_model_1.User);
+    const postModel = new repository_1.PostRepository(post_model_1.Post);
+    const commentModel = new repository_1.CommentRepository(exports.CommentModel);
     if (doc.tags?.length) {
         const taggedUsers = [];
         for (const tagId of doc.tags) {
-            const user = await _userModel.findOne({ _id: tagId });
+            const user = await userModel.findOne({ _id: tagId });
             if (user)
                 taggedUsers.push(user);
         }
-        const createdBy = (await _userModel.findOne({
+        const createdBy = (await userModel.findOne({
             _id: doc.createdBy,
         }));
         if (createdBy) {
@@ -60,12 +60,12 @@ commentSchema.post("save", async function (doc) {
             }
         }
     }
-    const post = await _postModel.findOne({ _id: doc.postId });
+    const post = await postModel.findOne({ _id: doc.postId });
     if (post && doc.createdBy.toString() !== post.createdBy.toString()) {
-        const postOwner = (await _userModel.findOne({
+        const postOwner = (await userModel.findOne({
             _id: post.createdBy,
         }));
-        const commenter = (await _userModel.findOne({
+        const commenter = (await userModel.findOne({
             _id: doc.createdBy,
         }));
         if (postOwner && commenter) {
@@ -82,13 +82,13 @@ commentSchema.post("save", async function (doc) {
         }
     }
     if (doc.commentId) {
-        const parentComment = await _commentModel.findById(doc.commentId);
+        const parentComment = await commentModel.findById(doc.commentId);
         if (parentComment &&
             parentComment.createdBy.toString() !== doc.createdBy.toString()) {
-            const parentOwner = (await _userModel.findOne({
+            const parentOwner = (await userModel.findOne({
                 _id: parentComment.createdBy,
             }));
-            const replier = (await _userModel.findOne({
+            const replier = (await userModel.findOne({
                 _id: doc.createdBy,
             }));
             if (parentOwner && replier) {
@@ -126,4 +126,4 @@ commentSchema.pre(["findOneAndUpdate", "updateOne"], async function (next) {
     }
     next();
 });
-exports.commentModel = mongoose_1.models.Comment || (0, mongoose_1.model)("Comment", commentSchema);
+exports.CommentModel = mongoose_1.models.Comment || (0, mongoose_1.model)("Comment", commentSchema);

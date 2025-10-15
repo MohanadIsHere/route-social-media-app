@@ -10,7 +10,7 @@ const tokens_1 = require("../../utils/tokens");
 const events_1 = require("../../utils/events");
 const repository_1 = require("../../database/repository");
 class AuthService {
-    userModel = new repository_1.UserRepository(models_1.User);
+    userModel = new repository_1.UserRepository(models_1.userModel);
     constructor() { }
     async verifyGmailAccount({ idToken, }) {
         const client = new google_auth_library_1.OAuth2Client();

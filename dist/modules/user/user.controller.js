@@ -48,4 +48,7 @@ userRouter.patch("/profile-image", (0, middlewares_1.authentication)(), user_ser
 userRouter.get("/dashboard", (0, middlewares_2.authorization)(middlewares_2.endpoint.dashboard), user_service_1.default.dashboard);
 userRouter.patch("/:userId/change-role", (0, middlewares_2.authorization)(middlewares_2.endpoint.dashboard), (0, middlewares_1.validation)(validators.changeRoleValidationSchema), user_service_1.default.changeRole);
 userRouter.post("/refresh-token", (0, middlewares_1.authentication)(tokens_1.TokenEnum.refresh), user_service_1.default.refreshToken);
+userRouter.post("/:userId/send-friend-request", (0, middlewares_1.authentication)(), (0, middlewares_1.validation)(validators.sendFriendRequestValidationSchema), user_service_1.default.sendFriendRequest);
+userRouter.patch("/accept-friend-request/:requestId", (0, middlewares_1.authentication)(), (0, middlewares_1.validation)(validators.acceptFriendRequestValidationSchema), user_service_1.default.acceptFriendRequest);
+userRouter.patch("/reject-friend-request/:requestId", (0, middlewares_1.authentication)(), (0, middlewares_1.validation)(validators.rejectFriendRequestValidationSchema), user_service_1.default.rejectFriendRequest);
 exports.default = userRouter;

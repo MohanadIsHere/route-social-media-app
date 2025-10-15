@@ -3,8 +3,8 @@ import { emailEvents } from "../../utils/events";
 import { APP_EMAIL, APP_NAME } from "../../config/env";
 import { emailTemplates } from "../../utils/templates";
 import { CommentRepository, PostRepository, UserRepository } from "../repository";
-import { HydratedUserDoc, User } from "./user.model";
-import { IPost, Post } from "./post.model";
+import { HydratedUserDoc, userModel } from "./user.model";
+import { IPost, postModel } from "./post.model";
 
 
 export interface IComment {
@@ -57,21 +57,21 @@ const commentSchema = new Schema<IComment>(
   }
 );
 commentSchema.post("save", async function (doc: IComment) {
-  const userModel = new UserRepository(User);
-  const postModel = new PostRepository(Post);
+  const _userModel = new UserRepository(userModel);
+  const _postModel = new PostRepository(postModel);
 
-  const commentModel = new CommentRepository(CommentModel)
+  const _commentModel = new CommentRepository(commentModel)
 
   // send email to tagged users
   if (doc.tags?.length) {
     const taggedUsers: HydratedUserDoc[] = [];
 
     for (const tagId of doc.tags) {
-      const user = await userModel.findOne({ _id: tagId });
+      const user = await _userModel.findOne({ _id: tagId });
       if (user) taggedUsers.push(user as HydratedUserDoc);
     }
 
-    const createdBy = (await userModel.findOne({
+    const createdBy = (await _userModel.findOne({
       _id: doc.createdBy,
     })) as HydratedUserDoc;
 
@@ -92,12 +92,12 @@ commentSchema.post("save", async function (doc: IComment) {
   }
 
   // send email to post owner when someone comments on his post
-  const post = await postModel.findOne({ _id: doc.postId });
+  const post = await _postModel.findOne({ _id: doc.postId });
   if (post && doc.createdBy.toString() !== post.createdBy.toString()) {
-    const postOwner = (await userModel.findOne({
+    const postOwner = (await _userModel.findOne({
       _id: post.createdBy,
     })) as HydratedUserDoc;
-    const commenter = (await userModel.findOne({
+    const commenter = (await _userModel.findOne({
       _id: doc.createdBy,
     })) as HydratedUserDoc;
 
@@ -117,15 +117,15 @@ commentSchema.post("save", async function (doc: IComment) {
 
   // send email to comment owner if someone replied to his comment
   if (doc.commentId) {
-    const parentComment = await commentModel.findById(doc.commentId);
+    const parentComment = await _commentModel.findById(doc.commentId);
     if (
       parentComment &&
       parentComment.createdBy.toString() !== doc.createdBy.toString()
     ) {
-      const parentOwner = (await userModel.findOne({
+      const parentOwner = (await _userModel.findOne({
         _id: parentComment.createdBy,
       })) as HydratedUserDoc;
-      const replier = (await userModel.findOne({
+      const replier = (await _userModel.findOne({
         _id: doc.createdBy,
       })) as HydratedUserDoc;
 
@@ -164,4 +164,4 @@ commentSchema.pre(["findOneAndUpdate", "updateOne"], async function (next) {
   }
   next();
 });
-export const CommentModel = models.Comment || model<IComment>("Comment", commentSchema);
+export const commentModel = models.Comment || model<IComment>("Comment", commentSchema);

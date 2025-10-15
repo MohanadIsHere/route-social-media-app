@@ -24,8 +24,8 @@ const postAvailability = (req) => {
 exports.postAvailability = postAvailability;
 class PostService {
     constructor() { }
-    postModel = new repository_1.PostRepository(models_1.Post);
-    userModel = new repository_1.UserRepository(models_1.User);
+    postModel = new repository_1.PostRepository(models_1.postModel);
+    userModel = new repository_1.UserRepository(models_1.userModel);
     createPost = async (req, res) => {
         if (req.body.tags?.length &&
             (await this.userModel.findFilter({

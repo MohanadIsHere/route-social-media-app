@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { User, UserProviders, IUser } from "../../database/models";
+import {  UserProviders, IUser, userModel } from "../../database/models";
 import { OAuth2Client, type TokenPayload } from "google-auth-library";
 
 import { APP_EMAIL, APP_NAME, WEB_CLIENT_ID } from "../../config/env";
@@ -30,7 +30,7 @@ import { UserRepository } from "../../database/repository";
 import { ILoginResponse, IRegisterWithGmailResponse } from "./auth.entities";
 
 class AuthService {
-  private userModel = new UserRepository(User);
+  private userModel = new UserRepository(userModel);
 
   constructor() {}
   private async verifyGmailAccount({

@@ -6,7 +6,7 @@ const models_1 = require("../models");
 const comment_repository_1 = require("./comment.repository");
 class PostRepository extends database_repository_1.DatabaseRepository {
     model;
-    commentModel = new comment_repository_1.CommentRepository(models_1.CommentModel);
+    commentModel = new comment_repository_1.CommentRepository(models_1.commentModel);
     constructor(model) {
         super(model);
         this.model = model;

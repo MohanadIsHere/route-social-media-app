@@ -9,8 +9,9 @@ import {
   AvailabilityEnum,
   type HydratedPostDoc,
   LikeActionEnum,
-  Post,
-  User,
+  postModel,
+  userModel,
+ 
 } from "../../database/models";
 import { deleteFiles, uploadFiles } from "../../utils/aws/S3";
 import { v4 as uuid } from "uuid";
@@ -33,8 +34,8 @@ export const postAvailability = (req: Request) => {
 
 class PostService {
   constructor() {}
-  private postModel = new PostRepository(Post);
-  private userModel = new UserRepository(User);
+  private postModel = new PostRepository(postModel);
+  private userModel = new UserRepository(userModel);
 
   createPost = async (req: Request, res: Response): Promise<Response> => {
     if (

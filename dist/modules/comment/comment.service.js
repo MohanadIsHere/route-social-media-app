@@ -8,9 +8,9 @@ const post_1 = require("../post");
 const S3_1 = require("../../utils/aws/S3");
 class CommentService {
     constructor() { }
-    userModel = new repository_1.UserRepository(models_1.User);
-    postModel = new repository_1.PostRepository(models_1.Post);
-    commentModel = new repository_1.CommentRepository(models_1.CommentModel);
+    userModel = new repository_1.UserRepository(models_1.userModel);
+    postModel = new repository_1.PostRepository(models_1.postModel);
+    commentModel = new repository_1.CommentRepository(models_1.commentModel);
     createComment = async (req, res) => {
         const { postId } = req.params;
         const post = await this.postModel.findOne({

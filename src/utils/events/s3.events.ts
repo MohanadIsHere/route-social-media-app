@@ -3,7 +3,7 @@ import { EventEmitter } from "node:events";
 import { AWS_PRE_SIGNED_URL_EXPIRES_IN } from "../../config/env";
 import { deleteFile, getFile } from "../aws/S3";
 import { UserRepository } from "../../database/repository";
-import { User } from "../../database/models";
+import {  userModel } from "../../database/models";
 import { Types } from "mongoose";
 export const s3Events = new EventEmitter({});
 
@@ -19,10 +19,10 @@ s3Events.on(
     console.log(data);
 
     setTimeout(async () => {
-      const userModel = new UserRepository(User);
+      const _userModel = new UserRepository(userModel);
       try {
         await getFile({ Key: data.newImageKey });
-        const updateResult = await userModel.updateOne({
+        const updateResult = await _userModel.updateOne({
           filter: { _id: data.userId as Types.ObjectId },
           update: {
             $unset: { tmpProfileImage: "" },
@@ -44,7 +44,7 @@ s3Events.on(
         );
         console.log(error);
         if (error.Code === "NoSuchKey") {
-          await userModel.updateOne({
+          await _userModel.updateOne({
             filter: { _id: data.userId as Types.ObjectId },
             update: {
               profileImage: data.oldImageKey,
