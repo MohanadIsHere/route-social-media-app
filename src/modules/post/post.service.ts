@@ -4,16 +4,10 @@ import {
   NotFoundException,
   successResponse,
 } from "../../utils/response";
-import {
-  CommentRepository,
-  PostRepository,
-  UserRepository,
-} from "../../database/repository";
+import { PostRepository, UserRepository } from "../../database/repository";
 import {
   AvailabilityEnum,
-  CommentModel,
-  HydratedPostDoc,
-  IPost,
+  type HydratedPostDoc,
   LikeActionEnum,
   Post,
   User,

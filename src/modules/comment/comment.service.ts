@@ -11,25 +11,22 @@ import {
 } from "../../database/repository";
 import {
   AllowCommentsEnum,
-  AvailabilityEnum,
-  Comment,
+  CommentModel,
   HydratedCommentDoc,
   HydratedPostDoc,
-  LikeActionEnum,
   Post,
   User,
 } from "../../database/models";
 import { Types } from "mongoose";
 import { postAvailability } from "../post";
 import { deleteFiles, uploadFiles } from "../../utils/aws/S3";
-import { LikeCommentQueryInputsDto } from "./dto";
 import { UpdateQuery } from "mongoose";
 
 class CommentService {
   constructor() {}
   private userModel = new UserRepository(User);
   private postModel = new PostRepository(Post);
-  private commentModel = new CommentRepository(Comment);
+  private commentModel = new CommentRepository(CommentModel);
 
   createComment = async (req: Request, res: Response): Promise<Response> => {
     const { postId } = req.params as unknown as { postId: Types.ObjectId };

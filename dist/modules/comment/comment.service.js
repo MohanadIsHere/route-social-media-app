@@ -10,7 +10,7 @@ class CommentService {
     constructor() { }
     userModel = new repository_1.UserRepository(models_1.User);
     postModel = new repository_1.PostRepository(models_1.Post);
-    commentModel = new repository_1.CommentRepository(models_1.Comment);
+    commentModel = new repository_1.CommentRepository(models_1.CommentModel);
     createComment = async (req, res) => {
         const { postId } = req.params;
         const post = await this.postModel.findOne({
