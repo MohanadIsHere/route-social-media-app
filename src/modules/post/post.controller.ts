@@ -3,14 +3,15 @@ import postService from "./post.service";
 import { authentication, validation } from "../../middlewares";
 import { cloudFileUpload, fileValidation } from "../../utils/multer";
 import * as validators from "./post.validation";
-
+import { commentRouter } from "../comment";
 
 const postRouter = Router();
+postRouter.use("/:postId/comments", commentRouter);
 postRouter.get(
   "/",
   authentication(),
 
-  postService.listPosts
+  postService.getPosts
 );
 postRouter.post(
   "/",

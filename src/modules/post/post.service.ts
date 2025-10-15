@@ -193,7 +193,7 @@ class PostService {
 
     return successResponse({ res });
   };
-  listPosts = async (req: Request, res: Response): Promise<Response> => {
+  getPosts = async (req: Request, res: Response): Promise<Response> => {
     let { page, size } = req.query as unknown as {
       page: number;
       size: number;

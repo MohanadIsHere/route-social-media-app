@@ -172,7 +172,7 @@ class PostService {
         });
         return (0, response_1.successResponse)({ res });
     };
-    listPosts = async (req, res) => {
+    getPosts = async (req, res) => {
         let { page, size } = req.query;
         const posts = await this.postModel.findAndPaginate({
             filter: {

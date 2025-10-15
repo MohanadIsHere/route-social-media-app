@@ -1,9 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PostRepository = exports.TokenRepository = exports.UserRepository = void 0;
+exports.CommentRepository = exports.PostRepository = exports.TokenRepository = exports.UserRepository = void 0;
 var user_repository_1 = require("./user.repository");
 Object.defineProperty(exports, "UserRepository", { enumerable: true, get: function () { return user_repository_1.UserRepository; } });
 var token_repository_1 = require("./token.repository");
 Object.defineProperty(exports, "TokenRepository", { enumerable: true, get: function () { return token_repository_1.TokenRepository; } });
 var post_repository_1 = require("./post.repository");
 Object.defineProperty(exports, "PostRepository", { enumerable: true, get: function () { return post_repository_1.PostRepository; } });
+var comment_repository_1 = require("./comment.repository");
+Object.defineProperty(exports, "CommentRepository", { enumerable: true, get: function () { return comment_repository_1.CommentRepository; } });
