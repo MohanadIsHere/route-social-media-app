@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createCommentValidationSchema = void 0;
+exports.replyOnCommentValidationSchema = exports.createCommentValidationSchema = void 0;
 const zod_1 = require("zod");
 const general_fields_1 = require("../../utils/general-fields");
 const multer_1 = require("../../utils/multer");
@@ -34,4 +34,10 @@ exports.createCommentValidationSchema = {
             });
         }
     }),
+};
+exports.replyOnCommentValidationSchema = {
+    params: exports.createCommentValidationSchema.params.extend({
+        commentId: general_fields_1.generalFields.id,
+    }),
+    body: exports.createCommentValidationSchema.body,
 };

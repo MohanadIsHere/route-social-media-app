@@ -39,7 +39,7 @@ class CommentService {
                 content: req.body.content || "",
                 attachments,
                 createdBy: req.user?._id,
-                postId
+                postId,
             },
         })) || {};
         if (!comment) {
@@ -55,6 +55,61 @@ class CommentService {
             data: {
                 comment,
             },
+        });
+    };
+    replyOnComment = async (req, res) => {
+        const { postId, commentId } = req.params;
+        const comment = await this.commentModel.findOne({
+            _id: commentId,
+            postId,
+        }, {
+            populate: [
+                {
+                    path: "postId",
+                    match: {
+                        allowComments: models_1.AllowCommentsEnum.allow,
+                        $or: (0, post_1.postAvailability)(req),
+                    },
+                },
+            ],
+        });
+        if (!comment?.postId)
+            throw new response_1.NotFoundException("Comment not found");
+        if (req.body.tags?.length &&
+            (await this.userModel.findFilter({
+                filter: { _id: { $in: req.body.tags } },
+            })).length !== req.body.tags.length) {
+            throw new response_1.NotFoundException("One or more tags not found");
+        }
+        let attachments = [];
+        if (req.body.attachments?.length) {
+            const post = comment?.postId;
+            const upload = await (0, S3_1.uploadFiles)({
+                files: req.files,
+                path: `users/${post.createdBy}/posts/${post.assetsFolderId}`,
+            });
+            attachments = upload;
+        }
+        const reply = (await this.commentModel.create({
+            data: {
+                ...req.body,
+                content: req.body.content || "",
+                attachments,
+                commentId,
+                createdBy: req.user?._id,
+                postId,
+            },
+        })) || {};
+        if (!reply) {
+            if (attachments.length) {
+                await (0, S3_1.deleteFiles)({ urls: attachments });
+            }
+            throw new response_1.BadRequestException("Fail to reply on comment");
+        }
+        return (0, response_1.successResponse)({
+            res,
+            statusCode: 201,
+            message: "Replied on comment successfully",
         });
     };
 }

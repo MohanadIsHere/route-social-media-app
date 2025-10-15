@@ -28,8 +28,8 @@ class DatabaseRepository {
         }
         return await this.model.updateOne(filter || {}, { ...update, inc: { __v: 1 } }, options);
     }
-    async findOne(filter) {
-        return this.model.findOne(filter).exec();
+    async findOne(filter, options) {
+        return this.model.findOne(filter, null, options).exec();
     }
     async findFilter({ filter, options = {}, }) {
         return this.model.find(filter, null, options).exec();

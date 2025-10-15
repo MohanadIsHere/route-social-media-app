@@ -11,4 +11,11 @@ commentRouter.post(
   validation(validators.createCommentValidationSchema),
   commentService.createComment
 );
+commentRouter.post(
+  "/:commentId/reply",
+  authentication(),
+  cloudFileUpload({ validation: fileValidation.image }).array("attachments", 2),
+  validation(validators.replyOnCommentValidationSchema),
+  commentService.replyOnComment
+);
 export default commentRouter;

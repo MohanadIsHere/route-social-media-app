@@ -35,3 +35,9 @@ export const createCommentValidationSchema = {
       }
     }),
 };
+export const replyOnCommentValidationSchema = {
+  params: createCommentValidationSchema.params.extend({
+    commentId: generalFields.id,
+  }),
+  body: createCommentValidationSchema.body,
+};

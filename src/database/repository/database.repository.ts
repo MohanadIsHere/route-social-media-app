@@ -66,9 +66,10 @@ export abstract class DatabaseRepository<TDocument> {
   }
 
   async findOne(
-    filter: Partial<RootFilterQuery<TDocument>>
+    filter: Partial<RootFilterQuery<TDocument>>,
+    options?: QueryOptions
   ): Promise<HydratedDocument<TDocument> | null> {
-    return this.model.findOne(filter).exec();
+    return this.model.findOne(filter, null,options).exec();
   }
 
   async findFilter({

@@ -4,12 +4,12 @@ import { APP_EMAIL, APP_NAME } from "../../config/env";
 import { emailTemplates } from "../../utils/templates";
 import { CommentRepository, PostRepository, UserRepository } from "../repository";
 import { HydratedUserDoc, User } from "./user.model";
-import { Post } from "./post.model";
+import { IPost, Post } from "./post.model";
 
 
 export interface IComment {
   createdBy: Types.ObjectId;
-  postId: Types.ObjectId;
+  postId: Types.ObjectId | Partial<IPost>;
   commentId?: Types.ObjectId;
 
   content?: string;
