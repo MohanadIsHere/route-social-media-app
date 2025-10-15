@@ -44,4 +44,5 @@ const validators = __importStar(require("./comment.validation"));
 const commentRouter = (0, express_1.Router)({ mergeParams: true });
 commentRouter.post("/", (0, middlewares_1.authentication)(), (0, multer_1.cloudFileUpload)({ validation: multer_1.fileValidation.image }).array("attachments", 2), (0, middlewares_1.validation)(validators.createCommentValidationSchema), comment_service_1.default.createComment);
 commentRouter.post("/:commentId/reply", (0, middlewares_1.authentication)(), (0, multer_1.cloudFileUpload)({ validation: multer_1.fileValidation.image }).array("attachments", 2), (0, middlewares_1.validation)(validators.replyOnCommentValidationSchema), comment_service_1.default.replyOnComment);
+commentRouter.patch("/:commentId/like", (0, middlewares_1.authentication)(), (0, middlewares_1.validation)(validators.likeCommentValidationSchema), comment_service_1.default.likeComment);
 exports.default = commentRouter;

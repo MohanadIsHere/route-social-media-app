@@ -133,9 +133,13 @@ export abstract class DatabaseRepository<TDocument> {
   }): Promise<HydratedDocument<TDocument> | null> {
     const result = await this.model.findOneAndUpdate(
       filter,
-      { $inc: { __v: 1 }, ...(update || {}) },
+      {
+        ...update,
+        $inc: { __v: 1 },
+      },
       options
     );
+
 
     if (!result) {
       throw new NotFoundException("Document not found");

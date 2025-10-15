@@ -1,9 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.replyOnCommentValidationSchema = exports.createCommentValidationSchema = void 0;
+exports.likeCommentValidationSchema = exports.replyOnCommentValidationSchema = exports.createCommentValidationSchema = void 0;
 const zod_1 = require("zod");
 const general_fields_1 = require("../../utils/general-fields");
 const multer_1 = require("../../utils/multer");
+const models_1 = require("../../database/models");
 exports.createCommentValidationSchema = {
     params: zod_1.z.strictObject({
         postId: general_fields_1.generalFields.id
@@ -40,4 +41,13 @@ exports.replyOnCommentValidationSchema = {
         commentId: general_fields_1.generalFields.id,
     }),
     body: exports.createCommentValidationSchema.body,
+};
+exports.likeCommentValidationSchema = {
+    params: zod_1.z.strictObject({
+        postId: general_fields_1.generalFields.id,
+        commentId: general_fields_1.generalFields.id,
+    }),
+    query: zod_1.z.strictObject({
+        action: zod_1.z.enum(models_1.LikeActionEnum).default(models_1.LikeActionEnum.like),
+    }),
 };

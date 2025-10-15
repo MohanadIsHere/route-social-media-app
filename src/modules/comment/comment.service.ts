@@ -9,10 +9,21 @@ import {
   PostRepository,
   UserRepository,
 } from "../../database/repository";
-import { AllowCommentsEnum, Comment, HydratedPostDoc, Post, User } from "../../database/models";
+import {
+  AllowCommentsEnum,
+  AvailabilityEnum,
+  Comment,
+  HydratedCommentDoc,
+  HydratedPostDoc,
+  LikeActionEnum,
+  Post,
+  User,
+} from "../../database/models";
 import { Types } from "mongoose";
 import { postAvailability } from "../post";
 import { deleteFiles, uploadFiles } from "../../utils/aws/S3";
+import { LikeCommentQueryInputsDto } from "./dto";
+import { UpdateQuery } from "mongoose";
 
 class CommentService {
   constructor() {}
@@ -109,7 +120,7 @@ class CommentService {
     }
     let attachments: string[] = [];
     if (req.body.attachments?.length) {
-      const post = comment?.postId as Partial<HydratedPostDoc>
+      const post = comment?.postId as Partial<HydratedPostDoc>;
       const upload = await uploadFiles({
         files: req.files as Express.Multer.File[],
         path: `users/${post.createdBy}/posts/${post.assetsFolderId}`,
@@ -139,6 +150,42 @@ class CommentService {
       res,
       statusCode: 201,
       message: "Replied on comment successfully",
+    });
+  };
+  likeComment = async (req: Request, res: Response): Promise<Response> => {
+    const { postId, commentId } = req.params as unknown as {
+      postId: Types.ObjectId;
+      commentId: Types.ObjectId;
+    };
+
+    const post = await this.postModel.findOne({
+      _id: new Types.ObjectId(postId),
+      $or: postAvailability(req),
+    });
+    if (!post) throw new NotFoundException("Post not found or not accessible");
+
+    const comment = await this.commentModel.findOne({
+      _id: new Types.ObjectId(commentId),
+      postId: post._id,
+    });
+    if (!comment) throw new NotFoundException("Comment not found in this post");
+    const isLiked = comment.likes?.some(
+      (id) => id.toString() === req.user?._id.toString()
+    );
+
+    const update: UpdateQuery<HydratedCommentDoc> = isLiked
+      ? { $pull: { likes: req.user?._id } }
+      : { $addToSet: { likes: req.user?._id } };
+
+    const updated = await this.commentModel.findOneAndUpdate({
+      filter: { _id: commentId },
+      update,
+      options: { new: true },
+    });
+
+    return successResponse({
+      res,
+      message: isLiked ? "Disliked successfully" : "Liked successfully",
     });
   };
 }

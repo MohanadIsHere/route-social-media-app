@@ -169,7 +169,6 @@ class PostService {
   likePost = async (req: Request, res: Response): Promise<Response> => {
     const { postId } = req.params;
     const { action } = req.query as LikePostQueryInputsDto;
-    console.log(action);
 
     let update: UpdateQuery<HydratedPostDoc> = {
       $addToSet: { likes: req.user?._id },

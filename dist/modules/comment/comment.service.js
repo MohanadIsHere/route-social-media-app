@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const response_1 = require("../../utils/response");
 const repository_1 = require("../../database/repository");
 const models_1 = require("../../database/models");
+const mongoose_1 = require("mongoose");
 const post_1 = require("../post");
 const S3_1 = require("../../utils/aws/S3");
 class CommentService {
@@ -110,6 +111,34 @@ class CommentService {
             res,
             statusCode: 201,
             message: "Replied on comment successfully",
+        });
+    };
+    likeComment = async (req, res) => {
+        const { postId, commentId } = req.params;
+        const post = await this.postModel.findOne({
+            _id: new mongoose_1.Types.ObjectId(postId),
+            $or: (0, post_1.postAvailability)(req),
+        });
+        if (!post)
+            throw new response_1.NotFoundException("Post not found or not accessible");
+        const comment = await this.commentModel.findOne({
+            _id: new mongoose_1.Types.ObjectId(commentId),
+            postId: post._id,
+        });
+        if (!comment)
+            throw new response_1.NotFoundException("Comment not found in this post");
+        const isLiked = comment.likes?.some((id) => id.toString() === req.user?._id.toString());
+        const update = isLiked
+            ? { $pull: { likes: req.user?._id } }
+            : { $addToSet: { likes: req.user?._id } };
+        const updated = await this.commentModel.findOneAndUpdate({
+            filter: { _id: commentId },
+            update,
+            options: { new: true },
+        });
+        return (0, response_1.successResponse)({
+            res,
+            message: isLiked ? "Disliked successfully" : "Liked successfully",
         });
     };
 }

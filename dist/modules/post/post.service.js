@@ -148,7 +148,6 @@ class PostService {
     likePost = async (req, res) => {
         const { postId } = req.params;
         const { action } = req.query;
-        console.log(action);
         let update = {
             $addToSet: { likes: req.user?._id },
         };

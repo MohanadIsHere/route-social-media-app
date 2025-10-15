@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { generalFields } from "../../utils/general-fields";
 import { fileValidation } from "../../utils/multer";
+import { LikeActionEnum } from "../../database/models";
 export const createCommentValidationSchema = {
   params:z.strictObject({
     postId:generalFields.id
@@ -40,4 +41,13 @@ export const replyOnCommentValidationSchema = {
     commentId: generalFields.id,
   }),
   body: createCommentValidationSchema.body,
+};
+export const likeCommentValidationSchema = {
+  params: z.strictObject({
+    postId: generalFields.id,
+    commentId: generalFields.id,
+  }),
+  query: z.strictObject({
+    action: z.enum(LikeActionEnum).default(LikeActionEnum.like),
+  }),
 };

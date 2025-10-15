@@ -18,4 +18,10 @@ commentRouter.post(
   validation(validators.replyOnCommentValidationSchema),
   commentService.replyOnComment
 );
+commentRouter.patch(
+  "/:commentId/like",
+  authentication(),
+  validation(validators.likeCommentValidationSchema),
+  commentService.likeComment
+);
 export default commentRouter;

@@ -55,7 +55,10 @@ class DatabaseRepository {
         return this.model.findById(id).exec();
     }
     async findOneAndUpdate({ filter, update, options = { new: true }, }) {
-        const result = await this.model.findOneAndUpdate(filter, { $inc: { __v: 1 }, ...(update || {}) }, options);
+        const result = await this.model.findOneAndUpdate(filter, {
+            ...update,
+            $inc: { __v: 1 },
+        }, options);
         if (!result) {
             throw new response_1.NotFoundException("Document not found");
         }
