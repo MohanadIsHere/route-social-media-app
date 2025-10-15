@@ -4,13 +4,11 @@ exports.createRevokeToken = exports.decodeToken = exports.createLoginCredentials
 const jsonwebtoken_1 = require("jsonwebtoken");
 const uuid_1 = require("uuid");
 const env_1 = require("../../config/env");
-const user_model_1 = require("../../database/models/user.model");
+const models_1 = require("../../database/models");
 const response_1 = require("../response");
-const user_repository_1 = require("../../database/repository/user.repository");
-const token_repository_1 = require("../../database/repository/token.repository");
-const token_model_1 = require("../../database/models/token.model");
-const userModel = new user_repository_1.UserRepository(user_model_1.User);
-const tokenModel = new token_repository_1.TokenRepository(token_model_1.Token);
+const repository_1 = require("../../database/repository");
+const _userModel = new repository_1.UserRepository(models_1.userModel);
+const _tokenModel = new repository_1.TokenRepository(models_1.tokenModel);
 var SignatureLevelsEnum;
 (function (SignatureLevelsEnum) {
     SignatureLevelsEnum["Bearer"] = "Bearer";
@@ -34,10 +32,11 @@ const verifyToken = ({ token, secret = env_1.ACCESS_TOKEN_USER_SECRET, }) => {
     return (0, jsonwebtoken_1.verify)(token, secret);
 };
 exports.verifyToken = verifyToken;
-const detectSignatureLevel = (role = user_model_1.UserRoles.user) => {
+const detectSignatureLevel = (role = models_1.UserRoles.user) => {
     let signatureLevel = SignatureLevelsEnum.Bearer;
     switch (role) {
-        case user_model_1.UserRoles.admin:
+        case models_1.UserRoles.admin:
+        case models_1.UserRoles.superAdmin:
             signatureLevel = SignatureLevelsEnum.System;
             break;
         default:
@@ -95,9 +94,9 @@ const decodeToken = async ({ authorization, tokenType = TokenEnum.access, }) => 
     });
     if (!decoded?.id || !decoded?.iat)
         throw new response_1.BadRequestException("Invalid token");
-    if (await tokenModel.findOne({ jti: decoded.jti }))
+    if (await _tokenModel.findOne({ jti: decoded.jti }))
         throw new response_1.UnauthorizedException("Token revoked");
-    const user = await userModel.findOne({ email: decoded?.email });
+    const user = await _userModel.findOne({ email: decoded?.email });
     if (!user)
         throw new response_1.NotFoundException("User not found");
     if ((user.changeCredentialsAt?.getTime() || 0) > decoded.iat * 1000)
@@ -106,7 +105,7 @@ const decodeToken = async ({ authorization, tokenType = TokenEnum.access, }) => 
 };
 exports.decodeToken = decodeToken;
 const createRevokeToken = async ({ decoded, }) => {
-    const result = await tokenModel.create({
+    const result = await _tokenModel.create({
         data: {
             jti: decoded.jti,
             expiresIn: decoded.iat + Number(env_1.REFRESH_TOKEN_EXPIRES_IN),

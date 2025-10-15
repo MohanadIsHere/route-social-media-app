@@ -1,8 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.authorization = exports.authentication = void 0;
+exports.endpoint = exports.authorization = exports.authentication = void 0;
 const tokens_1 = require("../utils/tokens");
 const response_1 = require("../utils/response");
+const user_model_1 = require("../database/models/user.model");
 const authentication = (tokenType = tokens_1.TokenEnum.access) => {
     return async (req, res, next) => {
         if (!req.headers.authorization) {
@@ -34,3 +35,6 @@ const authorization = (accessRoles = []) => {
     };
 };
 exports.authorization = authorization;
+exports.endpoint = {
+    dashboard: [user_model_1.UserRoles.admin, user_model_1.UserRoles.superAdmin]
+};

@@ -17,20 +17,23 @@ import {
 } from "../../config/env";
 import {
   type HydratedUserDoc,
-  User,
+  userModel,
   UserRoles,
-} from "../../database/models/user.model";
+  HydratedTokenDoc,
+  tokenModel,
+} from "../../database/models";
 import {
   BadRequestException,
   NotFoundException,
   UnauthorizedException,
 } from "../response";
-import { UserRepository } from "../../database/repository/user.repository";
-import { TokenRepository } from "../../database/repository/token.repository";
-import { HydratedTokenDoc, Token } from "../../database/models/token.model";
+import {
+  UserRepository,
+  TokenRepository,
+} from "../../database/repository";
 
-const userModel: UserRepository = new UserRepository(User);
-const tokenModel: TokenRepository = new TokenRepository(Token);
+const _userModel = new UserRepository(userModel);
+const _tokenModel = new TokenRepository(tokenModel);
 
 export enum SignatureLevelsEnum {
   Bearer = "Bearer",
@@ -73,6 +76,7 @@ export const detectSignatureLevel = (
     role // determine signature level based on role
   ) {
     case UserRoles.admin:
+    case UserRoles.superAdmin:
       signatureLevel = SignatureLevelsEnum.System; // admin
       break;
     default:
@@ -144,10 +148,10 @@ export const decodeToken = async ({
   if (!decoded?.id || !decoded?.iat)
     throw new BadRequestException("Invalid token");
 
-  if (await tokenModel.findOne({ jti: decoded.jti! }))
+  if (await _tokenModel.findOne({ jti: decoded.jti! }))
     throw new UnauthorizedException("Token revoked");
 
-  const user = await userModel.findOne({ email: decoded?.email });
+  const user = await _userModel.findOne({ email: decoded?.email });
   if (!user) throw new NotFoundException("User not found");
 
   if ((user.changeCredentialsAt?.getTime() || 0) > decoded.iat * 1000)
@@ -160,7 +164,7 @@ export const createRevokeToken = async ({
 }: {
   decoded: JwtPayload;
 }): Promise<HydratedTokenDoc> => {
-  const result = await tokenModel.create({
+  const result = await _tokenModel.create({
     data: {
       jti: decoded.jti as string,
       expiresIn: decoded.iat! + Number(REFRESH_TOKEN_EXPIRES_IN),

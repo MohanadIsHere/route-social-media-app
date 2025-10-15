@@ -35,3 +35,6 @@ export const authorization = (accessRoles:UserRoles[] = []) => {
     next();
   };
 };
+export const endpoint = {
+  dashboard:[UserRoles.admin,UserRoles.superAdmin]
+}

@@ -13,6 +13,7 @@ export enum UserGenders {
 export enum UserRoles {
   user = "user",
   admin = "admin",
+  superAdmin = "superAdmin"
 }
 export enum UserProviders {
   system = "system",
@@ -143,5 +144,5 @@ userSchema.post("save", function (doc) {
 });
 
 
-export const User = models.User || model<IUser>("User", userSchema);
+export const userModel = models.User || model<IUser>("User", userSchema);
 export type HydratedUserDoc = HydratedDocument<IUser>;

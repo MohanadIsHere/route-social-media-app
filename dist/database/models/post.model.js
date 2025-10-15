@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Post = exports.LikeActionEnum = exports.AvailabilityEnum = exports.AllowCommentsEnum = void 0;
+exports.postModel = exports.LikeActionEnum = exports.AvailabilityEnum = exports.AllowCommentsEnum = void 0;
 const mongoose_1 = require("mongoose");
 const events_1 = require("../../utils/events");
 const env_1 = require("../../config/env");
@@ -58,12 +58,12 @@ const postSchema = new mongoose_1.Schema({
 postSchema.post("save", async function (doc) {
     if (!doc.tags?.length)
         return;
-    const userModel = new repository_1.UserRepository(user_model_1.User);
+    const _userModel = new repository_1.UserRepository(user_model_1.userModel);
     let taggedUsers = [];
     for (const element of doc.tags) {
-        taggedUsers.push((await userModel.findOne({ _id: element })));
+        taggedUsers.push((await _userModel.findOne({ _id: element })));
     }
-    const createdBy = (await userModel.findOne({
+    const createdBy = (await _userModel.findOne({
         _id: doc.createdBy,
     }));
     for (const user of taggedUsers) {
@@ -101,4 +101,4 @@ postSchema.pre(["findOneAndUpdate", "updateOne"], async function (next) {
     }
     next();
 });
-exports.Post = mongoose_1.models.Post || (0, mongoose_1.model)("Post", postSchema);
+exports.postModel = mongoose_1.models.Post || (0, mongoose_1.model)("Post", postSchema);

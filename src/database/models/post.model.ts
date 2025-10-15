@@ -3,7 +3,7 @@ import { emailEvents } from "../../utils/events";
 import { APP_EMAIL, APP_NAME } from "../../config/env";
 import { emailTemplates } from "../../utils/templates";
 import { UserRepository } from "../repository";
-import { HydratedUserDoc, User } from "./user.model";
+import { HydratedUserDoc, userModel } from "./user.model";
 
 export enum AllowCommentsEnum {
   allow = "allow",
@@ -77,14 +77,14 @@ const postSchema = new Schema<IPost>(
 );
 postSchema.post("save", async function (doc) {
   if (!doc.tags?.length) return;
-  const userModel = new UserRepository(User);
+  const _userModel = new UserRepository(userModel);
   let taggedUsers: HydratedUserDoc[] = [];
   for (const element of doc.tags) {
     taggedUsers.push(
-      (await userModel.findOne({ _id: element })) as HydratedUserDoc
+      (await _userModel.findOne({ _id: element })) as HydratedUserDoc
     );
   }
-  const createdBy = (await userModel.findOne({
+  const createdBy = (await _userModel.findOne({
     _id: doc.createdBy,
   })) as HydratedUserDoc;
   for (const user of taggedUsers) {
@@ -120,4 +120,4 @@ postSchema.pre(["findOneAndUpdate", "updateOne"], async function (next) {
   }
   next();
 });
-export const Post = models.Post || model<IPost>("Post", postSchema);
+export const postModel = models.Post || model<IPost>("Post", postSchema);

@@ -141,9 +141,7 @@ export abstract class DatabaseRepository<TDocument> {
     );
 
 
-    if (!result) {
-      throw new NotFoundException("Document not found");
-    }
+    
 
     return result;
   }

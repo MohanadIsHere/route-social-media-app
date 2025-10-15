@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.User = exports.UserProviders = exports.UserRoles = exports.UserGenders = void 0;
+exports.userModel = exports.UserProviders = exports.UserRoles = exports.UserGenders = void 0;
 const mongoose_1 = require("mongoose");
 const hash_1 = require("../../utils/security/hash");
 const encryption_1 = require("../../utils/security/encryption");
@@ -17,6 +17,7 @@ var UserRoles;
 (function (UserRoles) {
     UserRoles["user"] = "user";
     UserRoles["admin"] = "admin";
+    UserRoles["superAdmin"] = "superAdmin";
 })(UserRoles || (exports.UserRoles = UserRoles = {}));
 var UserProviders;
 (function (UserProviders) {
@@ -108,4 +109,4 @@ userSchema.post("save", function (doc) {
         plainOtp = null;
     }
 });
-exports.User = mongoose_1.models.User || (0, mongoose_1.model)("User", userSchema);
+exports.userModel = mongoose_1.models.User || (0, mongoose_1.model)("User", userSchema);

@@ -23,5 +23,5 @@ const tokenSchema = new Schema(
     optimisticConcurrency: true,
   }
 );
-export const Token = models.Token || model<IToken>("Token", tokenSchema)
+export const tokenModel = models.Token || model<IToken>("Token", tokenSchema)
 export type HydratedTokenDoc = HydratedDocument<IToken>

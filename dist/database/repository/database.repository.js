@@ -59,9 +59,6 @@ class DatabaseRepository {
             ...update,
             $inc: { __v: 1 },
         }, options);
-        if (!result) {
-            throw new response_1.NotFoundException("Document not found");
-        }
         return result;
     }
 }

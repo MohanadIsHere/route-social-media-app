@@ -6,11 +6,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = require("mongoose");
 const env_1 = require("../config/env");
 const chalk_1 = __importDefault(require("chalk"));
-const user_model_1 = require("./models/user.model");
+const models_1 = require("./models");
 const connectToDatabase = async () => {
     try {
         await (0, mongoose_1.connect)(env_1.DB_URI);
-        await user_model_1.User.syncIndexes();
+        await models_1.userModel.syncIndexes();
         console.log(chalk_1.default.green.bold("Connected to MongoDB Server Successfully ✅"));
     }
     catch (error) {
