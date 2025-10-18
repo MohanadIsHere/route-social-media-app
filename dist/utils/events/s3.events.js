@@ -33,6 +33,10 @@ exports.s3Events.on("trackProfileImageUpload", (data) => {
             console.log(chalk_1.default.red("Error fetching new image from S3:", error.message));
             console.log(error);
             if (error.Code === "NoSuchKey") {
+                let unsetData = { tmpProfileImage: 1 };
+                if (data.oldImageKey) {
+                    unsetData = { tmpProfileImage: 1, profilePicture: 1 };
+                }
                 await _userModel.updateOne({
                     filter: { _id: data.userId },
                     update: {

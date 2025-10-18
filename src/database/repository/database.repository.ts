@@ -69,7 +69,7 @@ export abstract class DatabaseRepository<TDocument> {
     filter: Partial<RootFilterQuery<TDocument>>,
     options?: QueryOptions
   ): Promise<HydratedDocument<TDocument> | null> {
-    return this.model.findOne(filter, null,options).exec();
+    return this.model.findOne(filter, null, options).exec();
   }
 
   async findFilter({
@@ -117,9 +117,10 @@ export abstract class DatabaseRepository<TDocument> {
   }
 
   async findById(
-    id: Types.ObjectId
+    id: Types.ObjectId,
+    options?: QueryOptions
   ): Promise<HydratedDocument<TDocument> | null> {
-    return this.model.findById(id).exec();
+    return this.model.findById(id, null,options).exec();
   }
 
   async findOneAndUpdate({
@@ -139,9 +140,6 @@ export abstract class DatabaseRepository<TDocument> {
       },
       options
     );
-
-
-    
 
     return result;
   }

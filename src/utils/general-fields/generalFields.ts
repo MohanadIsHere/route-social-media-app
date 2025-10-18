@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { UserRoles } from "../../database/models";
+import { UserGenders, UserRoles } from "../../database/models";
 import { Types } from "mongoose";
 
 export const generalFields = {
@@ -9,6 +9,7 @@ export const generalFields = {
             },
             { message: "Invalid tag ID" }
           ),
+          gender: z.enum(UserGenders).default(UserGenders.male),
   file: function (mimetype: string[]) {
     return z
       .strictObject({

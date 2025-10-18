@@ -38,11 +38,24 @@ class UserService {
 
   // get me
   me = async (req: Request, res: Response): Promise<Response> => {
+    const profile = await this.userModel.findById(
+      req.user?._id as Types.ObjectId,
+      {
+        populate: [
+          {
+            path: "friends",
+            select: "firstName lastName email gender profilePicture",
+          },
+        ],
+      }
+    );
+    if (!profile) throw new NotFoundException("User not found");
+
     return successResponse({
       res,
 
       message: "User Retrieved Successfully",
-      data: { user: req.user, decoded: req.decoded },
+      data: { user: profile },
     });
   };
   dashboard = async (req: Request, res: Response): Promise<Response> => {
@@ -102,7 +115,9 @@ class UserService {
     const checkFriendRequestExist = await this.friendRequestModel.findOne({
       createdBy: { $in: [req.user?._id, userId] },
       sendTo: { $in: [req.user?._id, userId] },
+      acceptedAt: { $exists: true },
     });
+    
     if (checkFriendRequestExist)
       throw new ConflictException("Friend request already exist");
     const user = await this.userModel.findOne({
@@ -233,7 +248,7 @@ class UserService {
       userId: req.user?._id,
       oldImageKey: req.user?.profileImage,
       newImageKey: key,
-      expiresIn: Number(AWS_PRE_SIGNED_URL_EXPIRES_IN) * 1000, // 30 seconds
+      expiresIn: Number(AWS_PRE_SIGNED_URL_EXPIRES_IN) * 1000,
     });
 
     return successResponse<IUpdateProfileImageResponse>({

@@ -24,7 +24,7 @@ const bootstrap = async () => {
     await (0, connection_db_1.default)();
     const limiter = (0, express_rate_limit_1.rateLimit)({
         windowMs: 15 * 60 * 1000,
-        limit: 50,
+        limit: 100,
         standardHeaders: "draft-8",
         legacyHeaders: false,
         ipv6Subnet: 56,
@@ -49,6 +49,7 @@ const bootstrap = async () => {
         const s3Response = await (0, S3_1.getFile)({ Key });
         if (!s3Response?.Body)
             throw new response_1.BadRequestException("Fail to fetch this asset");
+        res.set("Cross-Origin-Resource-Policy", "cross-origin");
         res.setHeader("Content-Type", `${s3Response.ContentType || "application/octet-stream"}`);
         if (download == "true") {
             res.setHeader("Content-Disposition", `attachment; filename="${fileName || Key.split("/").pop()}"`);

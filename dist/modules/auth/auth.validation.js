@@ -19,6 +19,7 @@ exports.RegisterSchema = {
         lastName: general_fields_1.generalFields.lastName,
         address: general_fields_1.generalFields.address.optional(),
         confirmPassword: general_fields_1.generalFields.confirmPassword,
+        gender: general_fields_1.generalFields.gender.optional()
     })
         .refine((data) => data.password === data.confirmPassword, {
         message: "Password do not match the confirm password",

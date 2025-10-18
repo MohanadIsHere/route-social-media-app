@@ -51,8 +51,8 @@ class DatabaseRepository {
             result,
         };
     }
-    async findById(id) {
-        return this.model.findById(id).exec();
+    async findById(id, options) {
+        return this.model.findById(id, null, options).exec();
     }
     async findOneAndUpdate({ filter, update, options = { new: true }, }) {
         const result = await this.model.findOneAndUpdate(filter, {

@@ -6,7 +6,7 @@ import { APP_NAME, PORT } from "./config/env";
 import { rateLimit } from "express-rate-limit";
 import morgan from "morgan";
 import chalk from "chalk";
-import {errorMiddleware} from "./middlewares";
+import { errorMiddleware } from "./middlewares";
 import { BadRequestException, NotFoundException } from "./utils/response";
 import connectToDatabase from "./database/connection.db";
 import { promisify } from "node:util";
@@ -23,7 +23,7 @@ const bootstrap = async (): Promise<void> => {
   await connectToDatabase();
   const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    limit: 50,
+    limit: 100,
     standardHeaders: "draft-8",
     legacyHeaders: false,
     ipv6Subnet: 56,
@@ -40,7 +40,6 @@ const bootstrap = async (): Promise<void> => {
   app.use("/api/users", userRouter);
   app.use("/api/posts", postRouter);
 
-
   app.get("/", (req: Request, res: Response) => {
     return res
       .status(200)
@@ -56,9 +55,11 @@ const bootstrap = async (): Promise<void> => {
 
       const { path } = req.params as unknown as { path: string[] };
       const Key = path.join("/");
+
       const s3Response = await getFile({ Key });
       if (!s3Response?.Body)
         throw new BadRequestException("Fail to fetch this asset");
+      res.set("Cross-Origin-Resource-Policy", "cross-origin");
       res.setHeader(
         "Content-Type",
         `${s3Response.ContentType || "application/octet-stream"}`

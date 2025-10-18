@@ -3,8 +3,8 @@ import { EventEmitter } from "node:events";
 import { AWS_PRE_SIGNED_URL_EXPIRES_IN } from "../../config/env";
 import { deleteFile, getFile } from "../aws/S3";
 import { UserRepository } from "../../database/repository";
-import {  userModel } from "../../database/models";
-import { Types } from "mongoose";
+import {  HydratedUserDoc, userModel } from "../../database/models";
+import { Types, UpdateQuery } from "mongoose";
 export const s3Events = new EventEmitter({});
 
 s3Events.on(
@@ -44,6 +44,10 @@ s3Events.on(
         );
         console.log(error);
         if (error.Code === "NoSuchKey") {
+          let unsetData: UpdateQuery<HydratedUserDoc> = { tmpProfileImage: 1};
+          if(data.oldImageKey){
+unsetData = { tmpProfileImage: 1, profilePicture:1};
+          }
           await _userModel.updateOne({
             filter: { _id: data.userId as Types.ObjectId },
             update: {

@@ -13,10 +13,20 @@ class UserService {
     friendRequestModel = new repository_1.FriendRequestRepository(models_1.friendRequestModel);
     constructor() { }
     me = async (req, res) => {
+        const profile = await this.userModel.findById(req.user?._id, {
+            populate: [
+                {
+                    path: "friends",
+                    select: "firstName lastName email gender profilePicture",
+                },
+            ],
+        });
+        if (!profile)
+            throw new response_1.NotFoundException("User not found");
         return (0, response_1.successResponse)({
             res,
             message: "User Retrieved Successfully",
-            data: { user: req.user, decoded: req.decoded },
+            data: { user: profile },
         });
     };
     dashboard = async (req, res) => {
@@ -67,6 +77,7 @@ class UserService {
         const checkFriendRequestExist = await this.friendRequestModel.findOne({
             createdBy: { $in: [req.user?._id, userId] },
             sendTo: { $in: [req.user?._id, userId] },
+            acceptedAt: { $exists: true },
         });
         if (checkFriendRequestExist)
             throw new response_1.ConflictException("Friend request already exist");

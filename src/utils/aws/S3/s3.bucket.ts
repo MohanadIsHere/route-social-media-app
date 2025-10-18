@@ -147,7 +147,7 @@ export const createPreSignedUrl = async ({
 }): Promise<{ url: string; key: string }> => {
   // const safeName = encodeURIComponent(originalname);
 
-  const Key = `${APP_NAME}/${path}/${uuid()}_pre_${originalname}`;
+  const Key = `${APP_NAME}/${path}/${uuid()}-pre-${originalname}`;
 
   const command = new PutObjectCommand({
     Bucket,
@@ -170,11 +170,11 @@ export const getFile = async ({
   Bucket?: string;
   Key: string;
 }): Promise<GetObjectCommandOutput> => {
-  const encodedKey = encodeURIComponent(Key);
+  Key
 
   const command = new GetObjectCommand({
     Bucket,
-    Key: encodedKey,
+    Key,
   });
   return await s3Client().send(command);
 };

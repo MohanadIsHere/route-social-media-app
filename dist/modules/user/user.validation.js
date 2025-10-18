@@ -6,14 +6,14 @@ const general_fields_1 = require("../../utils/general-fields");
 const models_1 = require("../../database/models");
 exports.changeRoleValidationSchema = {
     params: zod_1.z.strictObject({
-        userId: general_fields_1.generalFields.id
+        userId: general_fields_1.generalFields.id,
     }),
     body: zod_1.z.strictObject({
-        role: zod_1.z.enum(models_1.UserRoles)
-    })
+        role: zod_1.z.enum(models_1.UserRoles),
+    }),
 };
 exports.sendFriendRequestValidationSchema = {
-    params: exports.changeRoleValidationSchema.params
+    params: exports.changeRoleValidationSchema.params,
 };
 exports.acceptFriendRequestValidationSchema = {
     params: zod_1.z.strictObject({
@@ -21,5 +21,5 @@ exports.acceptFriendRequestValidationSchema = {
     }),
 };
 exports.rejectFriendRequestValidationSchema = {
-    params: exports.acceptFriendRequestValidationSchema.params
+    params: exports.acceptFriendRequestValidationSchema.params,
 };

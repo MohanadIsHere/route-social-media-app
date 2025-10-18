@@ -8,6 +8,7 @@ exports.generalFields = {
     id: zod_1.z.string().refine((data) => {
         return mongoose_1.Types.ObjectId.isValid(data);
     }, { message: "Invalid tag ID" }),
+    gender: zod_1.z.enum(models_1.UserGenders).default(models_1.UserGenders.male),
     file: function (mimetype) {
         return zod_1.z
             .strictObject({

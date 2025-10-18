@@ -18,6 +18,7 @@ export const RegisterSchema = {
       address: generalFields.address.optional(),
       // profilePicture: generalFields.profilePicture.optional(),
       confirmPassword: generalFields.confirmPassword,
+      gender: generalFields.gender.optional()
     })
     .refine((data) => data.password === data.confirmPassword, {
       message: "Password do not match the confirm password",

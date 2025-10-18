@@ -83,7 +83,7 @@ const uploadLargeFile = async ({ Bucket = env_1.AWS_BUCKET_NAME, ACL = "private"
 };
 exports.uploadLargeFile = uploadLargeFile;
 const createPreSignedUrl = async ({ Bucket = env_1.AWS_BUCKET_NAME, path, ContentType, originalname, expiresIn = Number(env_1.AWS_PRE_SIGNED_URL_EXPIRES_IN), }) => {
-    const Key = `${env_1.APP_NAME}/${path}/${(0, uuid_1.v4)()}_pre_${originalname}`;
+    const Key = `${env_1.APP_NAME}/${path}/${(0, uuid_1.v4)()}-pre-${originalname}`;
     const command = new client_s3_1.PutObjectCommand({
         Bucket,
         Key,
@@ -97,10 +97,10 @@ const createPreSignedUrl = async ({ Bucket = env_1.AWS_BUCKET_NAME, path, Conten
 };
 exports.createPreSignedUrl = createPreSignedUrl;
 const getFile = async ({ Bucket = env_1.AWS_BUCKET_NAME, Key, }) => {
-    const encodedKey = encodeURIComponent(Key);
+    Key;
     const command = new client_s3_1.GetObjectCommand({
         Bucket,
-        Key: encodedKey,
+        Key,
     });
     return await (0, s3_config_1.s3Client)().send(command);
 };
