@@ -60,8 +60,9 @@ const bootstrap = async () => {
         throw new response_1.NotFoundException(`Url ${req.originalUrl} not found, check your endpoint and the method used`);
     });
     app.use(middlewares_1.errorMiddleware);
-    app.listen(port, () => {
+    const httpServer = app.listen(port, () => {
         console.log(chalk_1.default.green.bold(`${env_1.APP_NAME} is running on port ${port} 🚀 !`));
     });
+    (0, modules_1.initializeIo)(httpServer);
 };
 exports.default = bootstrap;

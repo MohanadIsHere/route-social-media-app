@@ -12,7 +12,7 @@ import connectToDatabase from "./database/connection.db";
 import { promisify } from "node:util";
 import { pipeline } from "node:stream";
 import { getFile } from "./utils/aws/S3";
-import { userRouter, authRouter, postRouter } from "./modules";
+import { userRouter, authRouter, postRouter, initializeIo } from "./modules";
 const createWriteStreamPipeline = promisify(pipeline);
 
 const app = express();
@@ -85,11 +85,13 @@ const bootstrap = async (): Promise<void> => {
   // error middleware
   app.use(errorMiddleware);
 
-  app.listen(port, () => {
+  const httpServer = app.listen(port, () => {
     console.log(
       chalk.green.bold(`${APP_NAME} is running on port ${port} 🚀 !`)
     );
   });
+  initializeIo(httpServer);
+  
 };
 
 export default bootstrap;
