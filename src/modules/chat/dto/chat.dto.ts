@@ -12,3 +12,6 @@ export interface ISendMessageDto extends IMainDto {
 export type IGetChatParamsDto = z.infer<
   typeof validators.getChatValidationSchema.params
 >;
+export type IGetChatQueryDto = z.infer<
+  typeof validators.getChatValidationSchema.query
+>;

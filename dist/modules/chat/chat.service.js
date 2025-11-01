@@ -12,18 +12,27 @@ class ChatService {
     constructor() { }
     getChat = async (req, res) => {
         const { userId } = req.params;
-        const chat = await this.chatModel.findOne({
-            participants: {
-                $all: [req.user?._id, mongoose_1.Types.ObjectId.createFromHexString(userId)],
-            },
-            group: { $exists: false },
-        }, {
-            populate: [
-                {
-                    path: "participants",
-                    select: "firstName lastName email gender profileImage",
+        const { page, size } = req.query;
+        const chat = await this.chatModel.findOneChat({
+            filter: {
+                participants: {
+                    $all: [
+                        req.user?._id,
+                        mongoose_1.Types.ObjectId.createFromHexString(userId),
+                    ],
                 },
-            ],
+                group: { $exists: false },
+            },
+            options: {
+                populate: [
+                    {
+                        path: "participants",
+                        select: "firstName lastName email gender profileImage",
+                    },
+                ],
+            },
+            page,
+            size,
         });
         if (!chat)
             throw new response_1.NotFoundException("Chat not found");
@@ -35,14 +44,13 @@ class ChatService {
     };
     sayHi = ({ message, socket, callback, io }) => {
         try {
-            console.log({ message });
-            return callback ? callback(`Hello from BE to {${socket.id}}`) : undefined;
+            callback ? callback(`Hello from BE to {${socket.id}}`) : undefined;
         }
         catch (error) {
-            return socket.emit("custom_error", error);
+            socket.emit("custom_error", error);
         }
     };
-    sendMessage = async ({ content, socket, sendTo, io }) => {
+    sendMessage = async ({ content, socket, sendTo, io, }) => {
         try {
             const createdBy = socket.credentials?.user._id;
             const user = await this.userModel.findOne({
@@ -86,7 +94,7 @@ class ChatService {
             });
         }
         catch (error) {
-            return socket.emit("custom_error", error);
+            socket.emit("custom_error", error);
         }
     };
 }

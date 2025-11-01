@@ -1,5 +1,10 @@
 import type { Request, Response } from "express";
-import type { IGetChatParamsDto, ISayHiDto, ISendMessageDto } from "./dto";
+import type {
+  IGetChatParamsDto,
+  IGetChatQueryDto,
+  ISayHiDto,
+  ISendMessageDto,
+} from "./dto";
 import {
   BadRequestException,
   NotFoundException,
@@ -18,23 +23,30 @@ export class ChatService {
   constructor() {}
   // REST
   getChat = async (req: Request, res: Response): Promise<Response> => {
-    const { userId } = req.params as IGetChatParamsDto;
-    const chat = await this.chatModel.findOne(
-      {
+    const { userId }: IGetChatParamsDto = req.params as IGetChatParamsDto;
+    const { page, size }: IGetChatQueryDto = req.query as IGetChatQueryDto;
+    const chat = await this.chatModel.findOneChat({
+      filter: {
         participants: {
-          $all: [req.user?._id, Types.ObjectId.createFromHexString(userId)],
+          $all: [
+            req.user?._id as Types.ObjectId,
+            Types.ObjectId.createFromHexString(userId),
+          ],
         },
         group: { $exists: false },
       },
-      {
+      options: {
         populate: [
           {
             path: "participants",
             select: "firstName lastName email gender profileImage",
           },
         ],
-      }
-    );
+      },
+      page,
+      size,
+    });
+
     if (!chat) throw new NotFoundException("Chat not found");
 
     return successResponse<IGetChatResponse>({
@@ -44,15 +56,19 @@ export class ChatService {
     });
   };
   // IO
-  sayHi = ({ message, socket, callback, io }: ISayHiDto) => {
+  sayHi = ({ message, socket, callback, io }: ISayHiDto): void => {
     try {
-      console.log({ message });
-      return callback ? callback(`Hello from BE to {${socket.id}}`) : undefined;
+      callback ? callback(`Hello from BE to {${socket.id}}`) : undefined;
     } catch (error) {
-      return socket.emit("custom_error", error);
+      socket.emit("custom_error", error);
     }
   };
-  sendMessage = async ({ content, socket, sendTo, io }: ISendMessageDto) => {
+  sendMessage = async ({
+    content,
+    socket,
+    sendTo,
+    io,
+  }: ISendMessageDto): Promise<void> => {
     try {
       const createdBy = socket.credentials?.user._id as Types.ObjectId; // sender
       const user = await this.userModel.findOne({
@@ -99,7 +115,7 @@ export class ChatService {
         from: socket.credentials?.user,
       });
     } catch (error) {
-      return socket.emit("custom_error", error);
+      socket.emit("custom_error", error);
     }
   };
 }
