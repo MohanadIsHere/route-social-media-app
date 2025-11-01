@@ -54,21 +54,19 @@ export class ChatService {
   };
   sendMessage = async ({ content, socket, sendTo, io }: ISendMessageDto) => {
     try {
-      // Find or create chat between sender and receiver
-
-      const createdBy = socket.credentials?.user._id as Types.ObjectId;
-      console.log({ content, sendTo, createdBy });
+      const createdBy = socket.credentials?.user._id as Types.ObjectId; // sender
       const user = await this.userModel.findOne({
         _id: Types.ObjectId.createFromHexString(sendTo),
         friends: { $in: createdBy },
       });
       if (!user) throw new NotFoundException("User not found or not a friend");
+      // Find or create chat between sender and receiver
       const chat = await this.chatModel.findOneAndUpdate({
         filter: {
           participants: {
             $all: [
-              createdBy as Types.ObjectId,
-              Types.ObjectId.createFromHexString(sendTo),
+              createdBy as Types.ObjectId, // sender
+              Types.ObjectId.createFromHexString(sendTo), // receiver
             ],
           },
           group: { $exists: false },
@@ -90,9 +88,16 @@ export class ChatService {
         });
         if (!newChat) throw new BadRequestException("Failed to create chat");
       }
+      // notify sender of his sent message
       io?.to(
         connectedSockets.get(createdBy.toString() as string) as string[]
       ).emit("successMessage", { content });
+
+      // notify receiver of new message
+      io?.to(connectedSockets.get(sendTo) as string[]).emit("newMessage", {
+        content,
+        from: socket.credentials?.user,
+      });
     } catch (error) {
       return socket.emit("custom_error", error);
     }

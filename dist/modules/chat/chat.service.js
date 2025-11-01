@@ -45,7 +45,6 @@ class ChatService {
     sendMessage = async ({ content, socket, sendTo, io }) => {
         try {
             const createdBy = socket.credentials?.user._id;
-            console.log({ content, sendTo, createdBy });
             const user = await this.userModel.findOne({
                 _id: mongoose_1.Types.ObjectId.createFromHexString(sendTo),
                 friends: { $in: createdBy },
@@ -81,6 +80,10 @@ class ChatService {
                     throw new response_1.BadRequestException("Failed to create chat");
             }
             io?.to(gateway_1.connectedSockets.get(createdBy.toString())).emit("successMessage", { content });
+            io?.to(gateway_1.connectedSockets.get(sendTo)).emit("newMessage", {
+                content,
+                from: socket.credentials?.user,
+            });
         }
         catch (error) {
             return socket.emit("custom_error", error);
