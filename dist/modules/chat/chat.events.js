@@ -12,7 +12,6 @@ class ChatEvent {
     };
     sendMessage = ({ socket, io }) => {
         return socket.on("sendMessage", (data) => {
-            console.log("data:", data);
             this.chatService.sendMessage({ socket, ...data, io });
         });
     };

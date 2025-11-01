@@ -16,7 +16,6 @@ s3Events.on(
     expiresIn: number;
   }) => {
     console.log(chalk.blue("Tracking S3 event:"));
-    console.log(data);
 
     setTimeout(async () => {
       const _userModel = new UserRepository(userModel);
@@ -29,8 +28,6 @@ s3Events.on(
           },
         });
         const deleteResult = await deleteFile({ Key: data.oldImageKey });
-        console.log("update result : ", updateResult);
-        console.log("delete result : ", deleteResult);
 
         console.log(
           chalk.green(

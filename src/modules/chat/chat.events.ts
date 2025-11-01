@@ -14,7 +14,6 @@ export class ChatEvent {
     return socket.on(
       "sendMessage",
       (data: { content: string; sendTo: string }) => {
-        console.log("data:", data);
 
         this.chatService.sendMessage({ socket, ...data, io });
       }

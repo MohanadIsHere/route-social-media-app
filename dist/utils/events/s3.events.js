@@ -13,7 +13,6 @@ const models_1 = require("../../database/models");
 exports.s3Events = new node_events_1.EventEmitter({});
 exports.s3Events.on("trackProfileImageUpload", (data) => {
     console.log(chalk_1.default.blue("Tracking S3 event:"));
-    console.log(data);
     setTimeout(async () => {
         const _userModel = new repository_1.UserRepository(models_1.userModel);
         try {
@@ -25,8 +24,6 @@ exports.s3Events.on("trackProfileImageUpload", (data) => {
                 },
             });
             const deleteResult = await (0, S3_1.deleteFile)({ Key: data.oldImageKey });
-            console.log("update result : ", updateResult);
-            console.log("delete result : ", deleteResult);
             console.log(chalk_1.default.green("New image successfully fetched from S3:", data.newImageKey));
         }
         catch (error) {
