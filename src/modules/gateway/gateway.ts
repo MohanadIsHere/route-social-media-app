@@ -5,7 +5,7 @@ import type { IAuthSocket } from "./gateway.interface";
 import { ChatGateway } from "../chat";
 import { BadRequestException } from "../../utils/response";
 
-const connectedSockets = new Map<string, string[]>();
+export const connectedSockets = new Map<string, string[]>();
 let io: undefined | Server = undefined;
 export const initializeIo = (httpServer: httpServer) => {
   io = new Server(httpServer, {
@@ -22,7 +22,6 @@ export const initializeIo = (httpServer: httpServer) => {
         authorization: socket.handshake.auth.authorization || "",
         tokenType: TokenEnum.access,
       });
-      // console.log({user,decoded});
       const userTabs = connectedSockets.get(user._id.toString()) || [];
       userTabs.push(socket.id);
 

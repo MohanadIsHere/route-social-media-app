@@ -44,7 +44,7 @@ class UserService {
         populate: [
           {
             path: "friends",
-            select: "firstName lastName email gender profilePicture",
+            select: "firstName lastName email gender profileImage",
           },
         ],
       }

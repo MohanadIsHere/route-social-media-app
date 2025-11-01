@@ -10,5 +10,11 @@ class ChatEvent {
             this.chatService.sayHi({ message, socket, callback, io });
         });
     };
+    sendMessage = ({ socket, io }) => {
+        return socket.on("sendMessage", (data) => {
+            console.log("data:", data);
+            this.chatService.sendMessage({ socket, ...data, io });
+        });
+    };
 }
 exports.ChatEvent = ChatEvent;

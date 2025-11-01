@@ -1,11 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getIo = exports.initializeIo = void 0;
+exports.getIo = exports.initializeIo = exports.connectedSockets = void 0;
 const socket_io_1 = require("socket.io");
 const tokens_1 = require("../../utils/tokens");
 const chat_1 = require("../chat");
 const response_1 = require("../../utils/response");
-const connectedSockets = new Map();
+exports.connectedSockets = new Map();
 let io = undefined;
 const initializeIo = (httpServer) => {
     io = new socket_io_1.Server(httpServer, {
@@ -21,9 +21,9 @@ const initializeIo = (httpServer) => {
                 authorization: socket.handshake.auth.authorization || "",
                 tokenType: tokens_1.TokenEnum.access,
             });
-            const userTabs = connectedSockets.get(user._id.toString()) || [];
+            const userTabs = exports.connectedSockets.get(user._id.toString()) || [];
             userTabs.push(socket.id);
-            connectedSockets.set(user._id.toString(), userTabs);
+            exports.connectedSockets.set(user._id.toString(), userTabs);
             socket.credentials = { user, decoded };
             next();
         }
@@ -34,14 +34,14 @@ const initializeIo = (httpServer) => {
     function disconnect(socket) {
         return socket.on("disconnect", () => {
             const userId = socket.credentials?.user._id?.toString();
-            let remainingTabs = connectedSockets.get(userId)?.filter((tab) => {
+            let remainingTabs = exports.connectedSockets.get(userId)?.filter((tab) => {
                 return tab !== socket.id;
             }) || [];
             if (remainingTabs.length) {
-                connectedSockets.set(userId, remainingTabs);
+                exports.connectedSockets.set(userId, remainingTabs);
             }
             else {
-                connectedSockets.delete(userId);
+                exports.connectedSockets.delete(userId);
                 (0, exports.getIo)().emit("offline_user", { disconnectedUserId: userId });
             }
         });

@@ -4,8 +4,10 @@ import userService from "./user.service";
 import { TokenEnum } from "../../utils/tokens";
 import { authorization, endpoint } from "../../middlewares";
 import * as validators from "./user.validation"
+import { chatRouter } from "../chat";
 
 const userRouter = Router();
+userRouter.use("/:userId/chat",chatRouter)
 
 userRouter.get("/me", authentication(), userService.me);
 userRouter.patch(

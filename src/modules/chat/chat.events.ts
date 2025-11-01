@@ -10,4 +10,14 @@ export class ChatEvent {
       this.chatService.sayHi({ message, socket, callback, io });
     });
   };
+  sendMessage = ({ socket, io }: { socket: IAuthSocket; io: Server }) => {
+    return socket.on(
+      "sendMessage",
+      (data: { content: string; sendTo: string }) => {
+        console.log("data:", data);
+
+        this.chatService.sendMessage({ socket, ...data, io });
+      }
+    );
+  };
 }
