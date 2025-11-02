@@ -11,12 +11,12 @@ import {
   LikeActionEnum,
   postModel,
   userModel,
- 
 } from "../../database/models";
 import { deleteFiles, uploadFiles } from "../../utils/aws/S3";
 import { v4 as uuid } from "uuid";
 import { Types, UpdateQuery } from "mongoose";
 import type { LikePostQueryInputsDto } from "./dto";
+import { connectedSockets, getIo } from "../gateway";
 export const postAvailability = (req: Request) => {
   return [
     { availability: AvailabilityEnum.public },
@@ -179,17 +179,20 @@ class PostService {
     } else {
       update = { $pull: { likes: req.user?._id } };
     }
-    const post = await this.postModel.findOne({
-      _id: new Types.ObjectId(postId),
-    });
-    if (!post) throw new NotFoundException("Post not found");
-    await this.postModel.findOneAndUpdate({
+
+    const post = await this.postModel.findOneAndUpdate({
       filter: {
         _id: postId,
         $or: postAvailability(req),
       },
       update,
     });
+    if (!post) throw new NotFoundException("Post not found");
+    if (action !== LikeActionEnum.dislike) {
+      getIo()
+        .to(connectedSockets.get(post.createdBy.toString()) as string[])
+        .emit("likePost", { postId, userId: req.user?._id, action });
+    }
 
     return successResponse({ res });
   };

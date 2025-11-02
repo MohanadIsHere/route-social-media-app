@@ -7,6 +7,7 @@ const models_1 = require("../../database/models");
 const S3_1 = require("../../utils/aws/S3");
 const uuid_1 = require("uuid");
 const mongoose_1 = require("mongoose");
+const gateway_1 = require("../gateway");
 const postAvailability = (req) => {
     return [
         { availability: models_1.AvailabilityEnum.public },
@@ -157,18 +158,20 @@ class PostService {
         else {
             update = { $pull: { likes: req.user?._id } };
         }
-        const post = await this.postModel.findOne({
-            _id: new mongoose_1.Types.ObjectId(postId),
-        });
-        if (!post)
-            throw new response_1.NotFoundException("Post not found");
-        await this.postModel.findOneAndUpdate({
+        const post = await this.postModel.findOneAndUpdate({
             filter: {
                 _id: postId,
                 $or: (0, exports.postAvailability)(req),
             },
             update,
         });
+        if (!post)
+            throw new response_1.NotFoundException("Post not found");
+        if (action !== models_1.LikeActionEnum.dislike) {
+            (0, gateway_1.getIo)()
+                .to(gateway_1.connectedSockets.get(post.createdBy.toString()))
+                .emit("likePost", { postId, userId: req.user?._id, action });
+        }
         return (0, response_1.successResponse)({ res });
     };
     getPosts = async (req, res) => {
