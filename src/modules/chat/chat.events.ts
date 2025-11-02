@@ -14,8 +14,20 @@ export class ChatEvent {
     return socket.on(
       "sendMessage",
       (data: { content: string; sendTo: string }) => {
-
         this.chatService.sendMessage({ socket, ...data, io });
+      }
+    );
+  };
+  joinRoom = ({ socket, io }: { socket: IAuthSocket; io: Server }) => {
+    return socket.on("joinRoom", (data: { roomId: string }) => {
+      this.chatService.joinRoom({ socket, ...data, io });
+    });
+  };
+  sendGroupMessage = ({ socket, io }: { socket: IAuthSocket; io: Server }) => {
+    return socket.on(
+      "sendGroupMessage",
+      (data: { content: string; groupId: string }) => {
+        this.chatService.sendGroupMessage({ socket, ...data, io });
       }
     );
   };

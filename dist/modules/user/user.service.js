@@ -11,6 +11,7 @@ class UserService {
     userModel = new repository_1.UserRepository(models_1.userModel);
     postModel = new repository_1.PostRepository(models_1.postModel);
     friendRequestModel = new repository_1.FriendRequestRepository(models_1.friendRequestModel);
+    chatModel = new repository_1.ChatRepository(models_1.chatModel);
     constructor() { }
     me = async (req, res) => {
         const profile = await this.userModel.findById(req.user?._id, {
@@ -23,10 +24,16 @@ class UserService {
         });
         if (!profile)
             throw new response_1.NotFoundException("User not found");
+        const groups = await this.chatModel.findFilter({
+            filter: {
+                participants: { $in: req.user?._id },
+                group: { $exists: true },
+            }
+        });
         return (0, response_1.successResponse)({
             res,
             message: "User Retrieved Successfully",
-            data: { user: profile },
+            data: { user: profile, groups },
         });
     };
     dashboard = async (req, res) => {

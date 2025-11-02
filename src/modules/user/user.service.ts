@@ -6,6 +6,7 @@ import {
   postModel,
   UserRoles,
   friendRequestModel,
+  chatModel,
 } from "../../database/models";
 
 import type { JwtPayload } from "jsonwebtoken";
@@ -17,6 +18,7 @@ import {
 } from "../../utils/response";
 import { createPreSignedUrl } from "../../utils/aws/S3";
 import {
+  ChatRepository,
   FriendRequestRepository,
   PostRepository,
   UserRepository,
@@ -24,6 +26,7 @@ import {
 import { s3Events } from "../../utils/events";
 import { AWS_PRE_SIGNED_URL_EXPIRES_IN } from "../../config/env";
 import {
+  IGetProfileResponse,
   IRefreshTokenResponse,
   IUpdateProfileImageResponse,
 } from "./user.entities";
@@ -33,6 +36,8 @@ class UserService {
   private userModel = new UserRepository(userModel);
   private postModel = new PostRepository(postModel);
   private friendRequestModel = new FriendRequestRepository(friendRequestModel);
+  private chatModel = new ChatRepository(chatModel);
+
 
   constructor() {}
 
@@ -50,12 +55,18 @@ class UserService {
       }
     );
     if (!profile) throw new NotFoundException("User not found");
+    const groups = await this.chatModel.findFilter({
+      filter:{
+        participants: { $in: req.user?._id as Types.ObjectId },
+        group: { $exists: true },
+      }
+    })
 
-    return successResponse({
+    return successResponse<IGetProfileResponse>({
       res,
 
       message: "User Retrieved Successfully",
-      data: { user: profile },
+      data: { user: profile, groups },
     });
   };
   dashboard = async (req: Request, res: Response): Promise<Response> => {

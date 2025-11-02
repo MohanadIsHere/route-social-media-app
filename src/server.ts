@@ -12,7 +12,7 @@ import connectToDatabase from "./database/connection.db";
 import { promisify } from "node:util";
 import { pipeline } from "node:stream";
 import { getFile } from "./utils/aws/S3";
-import { userRouter, authRouter, postRouter, initializeIo } from "./modules";
+import { userRouter, authRouter, postRouter, initializeIo, chatRouter } from "./modules";
 const createWriteStreamPipeline = promisify(pipeline);
 
 const app = express();
@@ -39,6 +39,7 @@ const bootstrap = async (): Promise<void> => {
   app.use("/api/auth", authRouter);
   app.use("/api/users", userRouter);
   app.use("/api/posts", postRouter);
+  app.use("/api/chat", chatRouter);
 
   app.get("/", (req: Request, res: Response) => {
     return res

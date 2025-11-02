@@ -37,6 +37,7 @@ const bootstrap = async () => {
     app.use("/api/auth", modules_1.authRouter);
     app.use("/api/users", modules_1.userRouter);
     app.use("/api/posts", modules_1.postRouter);
+    app.use("/api/chat", modules_1.chatRouter);
     app.get("/", (req, res) => {
         return res
             .status(200)

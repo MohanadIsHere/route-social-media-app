@@ -21,13 +21,13 @@ s3Events.on(
       const _userModel = new UserRepository(userModel);
       try {
         await getFile({ Key: data.newImageKey });
-        const updateResult = await _userModel.updateOne({
+        await _userModel.updateOne({
           filter: { _id: data.userId as Types.ObjectId },
           update: {
             $unset: { tmpProfileImage: "" },
           },
         });
-        const deleteResult = await deleteFile({ Key: data.oldImageKey });
+         await deleteFile({ Key: data.oldImageKey });
 
         console.log(
           chalk.green(

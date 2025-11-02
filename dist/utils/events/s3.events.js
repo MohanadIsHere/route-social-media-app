@@ -17,13 +17,13 @@ exports.s3Events.on("trackProfileImageUpload", (data) => {
         const _userModel = new repository_1.UserRepository(models_1.userModel);
         try {
             await (0, S3_1.getFile)({ Key: data.newImageKey });
-            const updateResult = await _userModel.updateOne({
+            await _userModel.updateOne({
                 filter: { _id: data.userId },
                 update: {
                     $unset: { tmpProfileImage: "" },
                 },
             });
-            const deleteResult = await (0, S3_1.deleteFile)({ Key: data.oldImageKey });
+            await (0, S3_1.deleteFile)({ Key: data.oldImageKey });
             console.log(chalk_1.default.green("New image successfully fetched from S3:", data.newImageKey));
         }
         catch (error) {
