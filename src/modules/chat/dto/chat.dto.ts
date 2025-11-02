@@ -16,6 +16,7 @@ export interface ISendGroupMessageDto extends IMainDto {
 export interface IJoinRoomDto extends IMainDto {
   roomId: string;
 }
+export interface ILeaveRoomDto extends IJoinRoomDto {}
 export type IGetChatParamsDto = z.infer<
   typeof validators.getChatValidationSchema.params
 >;

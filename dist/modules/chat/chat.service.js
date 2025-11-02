@@ -216,5 +216,31 @@ class ChatService {
             socket.emit("custom_error", error);
         }
     };
+    leaveRoom = async ({ socket, roomId, io }) => {
+        try {
+            const chat = await this.chatModel.findOneAndUpdate({
+                filter: {
+                    roomId,
+                    group: { $exists: true },
+                    participants: { $in: socket.credentials?.user._id },
+                },
+                update: {
+                    $pull: {
+                        participants: socket.credentials?.user._id,
+                    },
+                },
+            });
+            if (!chat)
+                throw new response_1.NotFoundException("Chatting group not found");
+            socket.leave(chat.roomId);
+            io?.to(roomId).emit("leftRoom", {
+                roomId,
+                user: socket.credentials?.user,
+            });
+        }
+        catch (error) {
+            socket.emit("custom_error", error);
+        }
+    };
 }
 exports.ChatService = ChatService;

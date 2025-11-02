@@ -25,5 +25,11 @@ class ChatEvent {
             this.chatService.sendGroupMessage({ socket, ...data, io });
         });
     };
+    leaveRoom = ({ socket, io }) => {
+        return socket.on("leaveRoom", (data) => {
+            this.chatService.leaveRoom({ socket, ...data, io });
+        });
+    };
 }
 exports.ChatEvent = ChatEvent;
+;

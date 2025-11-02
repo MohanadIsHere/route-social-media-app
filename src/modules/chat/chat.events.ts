@@ -31,4 +31,10 @@ export class ChatEvent {
       }
     );
   };
-}
+  leaveRoom = ({ socket, io }: { socket: IAuthSocket; io: Server }) => {
+    return socket.on("leaveRoom", (data: { roomId: string }) => {
+      this.chatService.leaveRoom({ socket, ...data, io });
+    });
+  };
+};
+
