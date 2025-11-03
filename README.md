@@ -7,7 +7,7 @@ A modern and feature-rich social media backend built with **Node.js**, **Express
 ## 🧩 Overview
 
 **RouteSocialMediaApp** is a backend API for a social networking platform where users can register, connect, and interact through posts, comments, reactions, and messaging.  
-This project serves as both a **learning** and **portfolio showcase** project, demonstrating full-stack API design with modern technologies and best practices.
+This project serves as both a **learning** and **portfolio showcase** project, demonstrating Bakcen API design with modern technologies and best practices.
 
 ---
 
